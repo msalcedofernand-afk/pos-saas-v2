@@ -59,22 +59,34 @@ jobs:
       - name: Apply base migrations on a clean database
         run: |
           set -o pipefail
-          supabase db reset --local --yes --version 20260920091555 2>&1 | tee "$RUNNER_TEMP/supabase-db-reset.log"
+          if ! supabase db reset --local --yes --version 20260920091555 2>&1 | tee "$RUNNER_TEMP/supabase-db-reset.log"; then
+            while IFS= read -r line; do echo "::error title=Supabase reset::$line"; done < "$RUNNER_TEMP/supabase-db-reset.log"
+            exit 1
+          fi
         working-directory: pos-saas-infra
       - name: Apply cash constraints migration on a clean database
         run: |
           set -o pipefail
-          supabase db reset --local --yes --version 20260920092136 2>&1 | tee -a "$RUNNER_TEMP/supabase-db-reset.log"
+          if ! supabase db reset --local --yes --version 20260920092136 2>&1 | tee -a "$RUNNER_TEMP/supabase-db-reset.log"; then
+            while IFS= read -r line; do echo "::error title=Supabase reset::$line"; done < "$RUNNER_TEMP/supabase-db-reset.log"
+            exit 1
+          fi
         working-directory: pos-saas-infra
       - name: Apply order integrity migrations on a clean database
         run: |
           set -o pipefail
-          supabase db reset --local --yes --version 20260920100000 2>&1 | tee -a "$RUNNER_TEMP/supabase-db-reset.log"
+          if ! supabase db reset --local --yes --version 20260920100000 2>&1 | tee -a "$RUNNER_TEMP/supabase-db-reset.log"; then
+            while IFS= read -r line; do echo "::error title=Supabase reset::$line"; done < "$RUNNER_TEMP/supabase-db-reset.log"
+            exit 1
+          fi
         working-directory: pos-saas-infra
       - name: Apply payment reconciliation migrations on a clean database
         run: |
           set -o pipefail
-          supabase db reset --local --yes 2>&1 | tee -a "$RUNNER_TEMP/supabase-db-reset.log"
+          if ! supabase db reset --local --yes 2>&1 | tee -a "$RUNNER_TEMP/supabase-db-reset.log"; then
+            while IFS= read -r line; do echo "::error title=Supabase reset::$line"; done < "$RUNNER_TEMP/supabase-db-reset.log"
+            exit 1
+          fi
         working-directory: pos-saas-infra
       - name: Upload database reset log
         if: always()
