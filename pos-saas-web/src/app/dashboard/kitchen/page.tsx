@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api/client";
+import { businessDateOffset } from "@/lib/date/business-date";
 
 type KitchenItem = {
   id: string;
@@ -33,9 +34,7 @@ const columns: { key: string; label: string; statuses: KitchenOrder["status"][] 
 ];
 
 function localDate(offsetDays = 0) {
-  const date = new Date();
-  date.setDate(date.getDate() + offsetDays);
-  return date.toISOString().slice(0, 10);
+  return businessDateOffset(offsetDays);
 }
 
 function elapsedSince(order: KitchenOrder, now: number) {

@@ -19,4 +19,16 @@ npm run dev
 
 La API corre en `http://localhost:3000` y esta web en `http://localhost:3001`.
 
+## Pruebas
+
+```bash
+npm run typecheck
+npm run build
+npm test
+```
+
+Las pruebas públicas corren sin configuración adicional. Para habilitar los flujos
+contra una API y base de datos de pruebas, define `PLAYWRIGHT_API_URL`, `E2E_EMAIL`,
+`E2E_PASSWORD` y, opcionalmente, `E2E_RESTRICTED_EMAIL` y `E2E_RESTRICTED_PASSWORD`.
+
 Las pantallas del proyecto anterior permanecen en `../pos-saas-main` y se migrarán gradualmente, reemplazando sus consultas directas por llamadas a la API.

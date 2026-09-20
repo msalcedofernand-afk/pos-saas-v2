@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api/client";
+import { businessDate } from "@/lib/date/business-date";
 
 type Report = { date: string; orders: number; paidOrders: number; cancelled: number; sales: number; paymentsByMethod: Record<string, number> };
 
 export default function ReportsPage() {
   const router = useRouter();
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => businessDate());
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   async function load() { try { setReport((await apiFetch<{ data: Report }>(`/api/v1/reports/summary?date=${date}`)).data); setError(null); } catch (cause) { const message = cause instanceof Error ? cause.message : "No se pudo cargar reporte"; if (message === "No autenticado") router.replace("/login"); else setError(message); } }

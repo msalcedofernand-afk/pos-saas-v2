@@ -3,6 +3,7 @@ import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { handleApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { businessDateOffset, businessDayRange } from "@/lib/date/business-date";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,8 @@ export async function GET(request: NextRequest) {
     if (auth.response) return auth.response;
 
     const { date } = querySchema.parse(Object.fromEntries(request.nextUrl.searchParams));
-    const targetDate = date ?? new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    const start = new Date(`${targetDate}T00:00:00-05:00`);
-    const end = new Date(start.getTime() + 86400000);
+    const targetDate = date ?? businessDateOffset(-1);
+    const { start, end } = businessDayRange(targetDate);
 
     const supabase = createAdminClient();
     const { data, error } = await (supabase as any)
