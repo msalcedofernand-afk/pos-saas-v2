@@ -59,7 +59,9 @@ jobs:
       - name: Apply migrations on a clean database
         run: |
           set -o pipefail
-          supabase db reset --local --yes 2>&1 | tee "$RUNNER_TEMP/supabase-db-reset.log"
+          supabase db reset --local --yes --version 20260920092136 2>&1 | tee "$RUNNER_TEMP/supabase-db-reset.log"
+          supabase db reset --local --yes --version 20260920100000 2>&1 | tee -a "$RUNNER_TEMP/supabase-db-reset.log"
+          supabase db reset --local --yes 2>&1 | tee -a "$RUNNER_TEMP/supabase-db-reset.log"
         working-directory: pos-saas-infra
       - name: Upload database reset log
         if: always()
