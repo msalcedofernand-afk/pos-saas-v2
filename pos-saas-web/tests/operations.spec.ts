@@ -52,12 +52,22 @@ test.describe("operaciones autenticadas", () => {
     expect((await request.delete(`${apiUrl}/api/v1/products/${product.id}`)).status()).toBe(200);
   });
 
-  test("creación y cancelación de pedidos", async ({ request }) => {
+  test("creación de pedidos", async ({ request }) => {
     test.skip(!configured, "Configura E2E_EMAIL y E2E_PASSWORD para pruebas contra una API real");
     const result = await login(request);
     test.skip(!result.data.user.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)), "La cuenta E2E no puede crear pedidos");
     const { order, product } = await createTestOrder(request);
     expect((await request.patch(`${apiUrl}/api/v1/orders/${order.id}/status`, { data: { status: "cancelled" } })).status()).toBe(200);
+    if (result.data.user.roles.includes("admin")) await request.delete(`${apiUrl}/api/v1/products/${product.id}`);
+  });
+
+  test("cancelación de pedidos", async ({ request }) => {
+    test.skip(!configured, "Configura E2E_EMAIL y E2E_PASSWORD para pruebas contra una API real");
+    const result = await login(request);
+    test.skip(!result.data.user.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)), "La cuenta E2E no puede cancelar pedidos");
+    const { order, product } = await createTestOrder(request);
+    const cancelled = await request.patch(`${apiUrl}/api/v1/orders/${order.id}/status`, { data: { status: "cancelled" } });
+    expect(cancelled.status()).toBe(200);
     if (result.data.user.roles.includes("admin")) await request.delete(`${apiUrl}/api/v1/products/${product.id}`);
   });
 
