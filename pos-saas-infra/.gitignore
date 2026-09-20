@@ -1,0 +1,9 @@
+node_modules/
+.env*
+!.env.example
+*.report.json
+scripts/generated/
+scripts/output/
+*.clean.txt
+*.filtered.txt
+*.normalized.txt

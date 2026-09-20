@@ -1,0 +1,15 @@
+{
+  "name": "pos-saas-infra",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "supabase": "supabase"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "supabase": "^2.117.0"
+  }
+}

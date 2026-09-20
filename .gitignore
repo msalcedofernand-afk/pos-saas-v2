@@ -1,0 +1,22 @@
+# Dependencies and build output
+**/node_modules/
+**/.next/
+**/out/
+**/dist/
+**/.turbo/
+**/.temp/
+
+# Local environment and secrets
+**/.env
+**/.env.local
+**/.env.*.local
+!.env.example
+
+# Logs and local tooling
+**/*.log
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Legacy project is intentionally kept outside POS SaaS V2
+/pos-saas-main/
