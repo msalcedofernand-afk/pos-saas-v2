@@ -10,8 +10,5 @@ ALTER FUNCTION public.handle_new_user()
 ALTER FUNCTION public.has_role(text)
   SET search_path = '';
 
-ALTER FUNCTION public.rls_auto_enable()
-  SET search_path = '';
-
 ALTER FUNCTION public.set_updated_at()
   SET search_path = '';
