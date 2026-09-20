@@ -12,17 +12,18 @@ export async function POST(request: NextRequest) {
     if (auth.response) return auth.response;
     const body = bodySchema.parse(await request.json());
     const db = createAdminClient() as any;
-    const { data: item, error: readError } = await db.from("inventory_items").select("id, current_stock").eq("id", body.inventoryItemId).maybeSingle();
-    if (readError) throw readError;
-    if (!item) return apiError("Insumo no encontrado", 404);
-    const current = Number(item.current_stock ?? 0);
-    const next = body.type === "in" ? current + body.quantity : body.type === "out" ? current - body.quantity : body.quantity;
-    if (next < 0) return apiError("El stock no puede quedar negativo", 409);
-    const { error: movementError } = await db.from("stock_movements").insert({ inventory_item_id: body.inventoryItemId, type: body.type, quantity: body.quantity, unit_cost: body.unitCost, description: body.description ?? null, user_id: auth.user.id });
-    if (movementError) throw movementError;
-    const { data, error } = await db.from("inventory_items").update({ current_stock: next, updated_at: new Date().toISOString() }).eq("id", body.inventoryItemId).select("id, name, current_stock, minimum_stock, unit").single();
-    if (error) throw error;
-    return NextResponse.json({ data });
+    const { data, error } = await db.rpc("register_inventory_movement", {
+      p_inventory_item_id: body.inventoryItemId,
+      p_user_id: auth.user.id,
+      p_type: body.type,
+      p_quantity: body.quantity,
+      p_unit_cost: body.unitCost,
+      p_description: body.description ?? null,
+    });
+    if (error) return apiError(error.message ?? "No se pudo registrar el movimiento", 409);
+    const item = Array.isArray(data) ? data[0] : data;
+    if (!item) return apiError("No se pudo registrar el movimiento", 500);
+    return NextResponse.json({ data: item }, { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }

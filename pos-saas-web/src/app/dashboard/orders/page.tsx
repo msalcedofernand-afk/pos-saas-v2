@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Toast } from "@/components/ui/Toast";
 import { apiFetch } from "@/lib/api/client";
 
 type Product = { id: string; name: string; price: number; is_available: boolean; categories?: { name: string } | null };
@@ -24,6 +26,9 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; tone: "error" | "success" } | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
+  const [cancelBusy, setCancelBusy] = useState(false);
 
   async function loadData() {
     try {
@@ -70,33 +75,41 @@ export default function OrdersPage() {
       setCart([]);
       setTableId("");
       await loadData();
+      setToast({ message: "Pedido enviado a cocina", tone: "success" });
     } catch (cause) {
-      window.alert(cause instanceof Error ? cause.message : "No se pudo crear el pedido");
+      setToast({ message: cause instanceof Error ? cause.message : "No se pudo crear el pedido", tone: "error" });
     } finally {
       setSaving(false);
     }
   }
 
-  async function cancelOrder(order: Order) {
-    if (!window.confirm("¿Cancelar este pedido?")) return;
+  async function confirmCancelOrder() {
+    if (!cancelTarget) return;
+    setCancelBusy(true);
     try {
-      await apiFetch(`/api/v1/orders/${order.id}/status`, { method: "PATCH", body: JSON.stringify({ status: "cancelled" }) });
+      await apiFetch(`/api/v1/orders/${cancelTarget.id}/status`, { method: "PATCH", body: JSON.stringify({ status: "cancelled" }) });
+      setCancelTarget(null);
       await loadData();
+      setToast({ message: "Pedido cancelado", tone: "success" });
     } catch (cause) {
-      window.alert(cause instanceof Error ? cause.message : "No se pudo cancelar");
+      setToast({ message: cause instanceof Error ? cause.message : "No se pudo cancelar", tone: "error" });
+    } finally {
+      setCancelBusy(false);
     }
   }
 
   return (
     <main className="shell orders-shell">
       <nav className="nav compact-nav"><Link className="brand" href="/dashboard">← Panel</Link><div className="nav-actions"><strong>Pedidos</strong><Link className="button button-small" href="/dashboard">Volver</Link></div></nav>
-      <div className="module-page-heading"><div><div className="eyebrow">Mesas y atención</div><h1>Pedidos</h1></div><button className="button button-small" onClick={() => void loadData()}>Actualizar</button></div>
-      {error && <p className="form-error">{error}</p>}
+      <div className="module-page-heading"><div><div className="eyebrow">Mesas y atención</div><h1>Pedidos</h1></div><button className="button button-small" onClick={() => void loadData()} type="button">Actualizar</button></div>
+      {toast && <Toast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} />}
+      {error && <p className="form-error" role="alert">{error}</p>}
       <div className="orders-layout">
-        <section className="order-builder panel-section"><div className="section-heading"><div><div className="eyebrow">Nuevo pedido</div><h2>Agregar productos</h2></div></div><div className="order-context"><select value={tableId} onChange={(event) => setTableId(event.target.value)}><option value="">Para llevar / sin mesa</option>{tables.map((table) => <option value={table.id} key={table.id}>{table.name} · {table.status === "occupied" ? "Ocupada" : "Disponible"}</option>)}</select><input min="1" type="number" value={guests} onChange={(event) => setGuests(event.target.value)} aria-label="Comensales" /></div><input className="order-search" placeholder="Buscar producto..." value={search} onChange={(event) => setSearch(event.target.value)} />{loading ? <p className="empty-state">Cargando productos...</p> : <div className="order-product-grid">{filteredProducts.map((product) => <button className="order-product" key={product.id} onClick={() => addProduct(product)}><strong>{product.name}</strong><small>{product.categories?.name ?? "Sin categoría"}</small><b>S/ {Number(product.price).toFixed(2)}</b></button>)}</div>}</section>
-        <section className="order-cart panel-section"><div className="section-heading"><div><div className="eyebrow">Comanda</div><h2>Pedido actual</h2></div><span>{cart.length} productos</span></div>{cart.length === 0 ? <p className="empty-state">Selecciona productos para comenzar.</p> : <div className="cart-list">{cart.map((item) => <div className="cart-row" key={item.productId}><div><strong>{item.name}</strong><small>S/ {item.price.toFixed(2)}</small></div><div className="quantity-controls"><button onClick={() => changeQuantity(item.productId, -1)}>−</button><b>{item.quantity}</b><button onClick={() => changeQuantity(item.productId, 1)}>+</button></div></div>)}</div>}<div className="cart-total"><span>Total</span><strong>S/ {total.toFixed(2)}</strong></div><button className="button button-primary full-button" disabled={saving || cart.length === 0} onClick={() => void createOrder()}>{saving ? "Enviando..." : "Enviar a cocina"}</button></section>
+        <section className="order-builder panel-section"><div className="section-heading"><div><div className="eyebrow">Nuevo pedido</div><h2>Agregar productos</h2></div></div><div className="order-context"><label className="sr-only" htmlFor="order-table">Mesa</label><select id="order-table" value={tableId} onChange={(event) => setTableId(event.target.value)}><option value="">Para llevar / sin mesa</option>{tables.map((table) => <option value={table.id} key={table.id}>{table.name} · {table.status === "occupied" ? "Ocupada" : "Disponible"}</option>)}</select><label className="sr-only" htmlFor="order-guests">Comensales</label><input id="order-guests" min="1" type="number" value={guests} onChange={(event) => setGuests(event.target.value)} /></div><label className="sr-only" htmlFor="order-search">Buscar producto</label><input id="order-search" className="order-search" placeholder="Buscar producto..." value={search} onChange={(event) => setSearch(event.target.value)} />{loading ? <p className="empty-state">Cargando productos...</p> : <div className="order-product-grid">{filteredProducts.map((product) => <button className="order-product" key={product.id} onClick={() => addProduct(product)} type="button"><strong>{product.name}</strong><small>{product.categories?.name ?? "Sin categoría"}</small><b>S/ {Number(product.price).toFixed(2)}</b></button>)}</div>}</section>
+        <section className="order-cart panel-section"><div className="section-heading"><div><div className="eyebrow">Comanda</div><h2>Pedido actual</h2></div><span>{cart.length} productos</span></div>{cart.length === 0 ? <p className="empty-state">Selecciona productos para comenzar.</p> : <div className="cart-list">{cart.map((item) => <div className="cart-row" key={item.productId}><div><strong>{item.name}</strong><small>S/ {item.price.toFixed(2)}</small></div><div className="quantity-controls"><button aria-label={`Quitar una unidad de ${item.name}`} onClick={() => changeQuantity(item.productId, -1)} type="button">−</button><b>{item.quantity}</b><button aria-label={`Agregar una unidad de ${item.name}`} onClick={() => changeQuantity(item.productId, 1)} type="button">+</button></div></div>)}</div>}<div className="cart-total"><span>Total</span><strong>S/ {total.toFixed(2)}</strong></div><button className="button button-primary full-button" disabled={saving || cart.length === 0} onClick={() => void createOrder()} type="button">{saving ? "Enviando..." : "Enviar a cocina"}</button></section>
       </div>
-      <section className="orders-list-section panel-section"><div className="section-heading"><div><div className="eyebrow">Operación</div><h2>Pedidos recientes</h2></div><span>{orders.length}</span></div>{orders.length === 0 ? <p className="empty-state">Todavía no hay pedidos registrados.</p> : <div className="orders-list">{orders.map((order) => <article className="order-row" key={order.id}><div><strong>{order.table?.name ?? "Para llevar"}</strong><small>#{order.id.slice(-6).toUpperCase()} · {order.order_items?.length ?? 0} líneas</small></div><span className={`order-status status-${order.status}`}>{statusLabels[order.status] ?? order.status}</span><b>S/ {Number(order.total_amount).toFixed(2)}</b>{["pending", "confirmed"].includes(order.status) && <button className="link-button danger" onClick={() => void cancelOrder(order)}>Cancelar</button>}</article>)}</div>}</section>
+      <section className="orders-list-section panel-section"><div className="section-heading"><div><div className="eyebrow">Operación</div><h2>Pedidos recientes</h2></div><span>{orders.length}</span></div>{orders.length === 0 ? <p className="empty-state">Todavía no hay pedidos registrados.</p> : <div className="orders-list">{orders.map((order) => <article className="order-row" key={order.id}><div><strong>{order.table?.name ?? "Para llevar"}</strong><small>#{order.id.slice(-6).toUpperCase()} · {order.order_items?.length ?? 0} líneas</small></div><span className={`order-status status-${order.status}`}>{statusLabels[order.status] ?? order.status}</span><b>S/ {Number(order.total_amount).toFixed(2)}</b>{["pending", "confirmed"].includes(order.status) && <button className="link-button danger" onClick={() => setCancelTarget(order)} type="button">Cancelar</button>}</article>)}</div>}</section>
+      <ConfirmDialog description={cancelTarget ? `El pedido de ${cancelTarget.table?.name ?? "esta venta"} pasará a estado cancelado.` : ""} busy={cancelBusy} confirmLabel="Cancelar pedido" danger onCancel={() => { if (!cancelBusy) setCancelTarget(null); }} onConfirm={() => void confirmCancelOrder()} open={Boolean(cancelTarget)} title="¿Cancelar este pedido?" />
     </main>
   );
 }

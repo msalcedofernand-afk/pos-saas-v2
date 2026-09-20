@@ -5,6 +5,7 @@
 **/dist/
 **/.turbo/
 **/.temp/
+**/test-results/
 
 # Local environment and secrets
 **/.env

@@ -10,6 +10,8 @@
 
 * { box-sizing: border-box; }
 
+.sr-only { clip: rect(0, 0, 0, 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
+
 html, body { margin: 0; min-height: 100%; }
 
 body {
@@ -90,6 +92,8 @@ h1 { font-size: clamp(40px, 6vw, 72px); letter-spacing: -0.07em; line-height: 0.
 .button-secondary { background: var(--surface); border: 1px solid var(--line); }
 .button-small { background: var(--surface); border: 1px solid var(--line); cursor: pointer; padding: 9px 12px; }
 .button:disabled { cursor: wait; opacity: 0.65; }
+.button-danger { background: #b91c1c; color: white; }
+.button-secondary:focus-visible, .button-primary:focus-visible, .button-small:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(79, 70, 229, .35); outline-offset: 2px; }
 
 .auth-shell { align-items: center; display: flex; justify-content: center; min-height: 100vh; padding: 24px; }
 .auth-card { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08); max-width: 440px; padding: 36px; width: 100%; }
@@ -212,6 +216,12 @@ h1 { font-size: clamp(40px, 6vw, 72px); letter-spacing: -0.07em; line-height: 0.
 .checkbox-label input { accent-color: var(--brand); width: auto; }
 .modal-actions { display: flex; gap: 9px; justify-content: flex-end; margin-top: 6px; }
 .modal-actions .button { border: 0; cursor: pointer; }
+.confirm-dialog { max-width: 460px; }
+.app-toast { align-items: center; border: 1px solid; border-radius: 12px; box-shadow: 0 12px 30px rgba(15, 23, 42, .14); display: flex; gap: 14px; justify-content: space-between; margin: 0 0 14px; padding: 12px 14px; }
+.app-toast-error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.app-toast-success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+.app-toast-info { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.app-toast-close { background: transparent; border: 0; color: currentColor; cursor: pointer; font-size: 20px; line-height: 1; padding: 0 3px; }
 .module-strip { align-items: center; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 16px; display: flex; flex-wrap: wrap; gap: 14px; margin: 28px 0 0; padding: 14px 16px; }
 .module-title { color: #3730a3; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
 .module-list { display: flex; flex-wrap: wrap; gap: 8px; }

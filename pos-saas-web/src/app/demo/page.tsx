@@ -21,7 +21,7 @@ export default function DemoPage() {
       <section className="demo-v2-heading"><div><div className="eyebrow">POS SaaS V2 · demos visuales</div><h1>Elige la dirección visual.</h1><p className="lead">Tres modelos distintos para definir cómo se sentirá el producto antes de conectar más módulos.</p></div><span className="demo-user">Demo temporal · datos ficticios</span></section>
 
       <div className="demo-model-picker" role="tablist" aria-label="Modelos visuales">
-        {(Object.keys(models) as DemoModel[]).map((key) => <button className={`demo-model-card${model === key ? " active" : ""}`} key={key} onClick={() => setModel(key)} role="tab" type="button"><span>{models[key].number}</span><strong>{models[key].name}</strong><small>{models[key].description}</small></button>)}
+        {(Object.keys(models) as DemoModel[]).map((key) => <button aria-selected={model === key} className={`demo-model-card${model === key ? " active" : ""}`} key={key} onClick={() => setModel(key)} role="tab" type="button"><span>{models[key].number}</span><strong>{models[key].name}</strong><small>{models[key].description}</small></button>)}
       </div>
 
       <section className={`v2-preview v2-${model}`} aria-live="polite">
