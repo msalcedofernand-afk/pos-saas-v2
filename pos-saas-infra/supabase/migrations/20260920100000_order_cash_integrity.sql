@@ -192,7 +192,7 @@ BEGIN
     RAISE EXCEPTION 'Transición de cocina no permitida';
   END IF;
 
-  IF p_status = 'cancelled' AND pg_catalog.nullif(pg_catalog.btrim(COALESCE(p_reason, '')), '') IS NULL THEN
+  IF p_status = 'cancelled' AND NULLIF(pg_catalog.btrim(COALESCE(p_reason, '')), '') IS NULL THEN
     RAISE EXCEPTION 'Debe indicar el motivo de rechazo o cancelación';
   END IF;
 
@@ -303,7 +303,7 @@ BEGIN
   WHERE cash_movements.shift_id = v_shift.id;
 
   v_difference := (p_closing_amount - v_expected)::numeric(10,2);
-  v_reason := pg_catalog.nullif(pg_catalog.btrim(COALESCE(p_difference_reason, '')), '');
+  v_reason := NULLIF(pg_catalog.btrim(COALESCE(p_difference_reason, '')), '');
   IF v_difference <> 0 AND v_reason IS NULL THEN
     RAISE EXCEPTION 'Debes indicar el motivo de la diferencia de caja';
   END IF;
