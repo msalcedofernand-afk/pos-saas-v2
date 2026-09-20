@@ -56,11 +56,19 @@ jobs:
           docker ps -a
           docker logs supabase_db_pos-saas-infra --tail 200 || true
         working-directory: pos-saas-infra
-      - name: Apply migrations on a clean database
+      - name: Apply base migrations on a clean database
         run: |
           set -o pipefail
           supabase db reset --local --yes --version 20260920092136 2>&1 | tee "$RUNNER_TEMP/supabase-db-reset.log"
+        working-directory: pos-saas-infra
+      - name: Apply order integrity migrations on a clean database
+        run: |
+          set -o pipefail
           supabase db reset --local --yes --version 20260920100000 2>&1 | tee -a "$RUNNER_TEMP/supabase-db-reset.log"
+        working-directory: pos-saas-infra
+      - name: Apply payment reconciliation migrations on a clean database
+        run: |
+          set -o pipefail
           supabase db reset --local --yes 2>&1 | tee -a "$RUNNER_TEMP/supabase-db-reset.log"
         working-directory: pos-saas-infra
       - name: Upload database reset log
