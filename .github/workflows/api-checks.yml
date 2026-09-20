@@ -41,7 +41,13 @@ jobs:
         with:
           version: latest
       - name: Start Postgres-only Supabase stack
-        run: supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor --ignore-health-check
+        run: |
+          cp supabase/config.toml "$RUNNER_TEMP/supabase-config.toml"
+          trap 'cp "$RUNNER_TEMP/supabase-config.toml" supabase/config.toml' EXIT
+          sed -i '/^\[db.migrations\]/,/^\[/{s/^enabled = true/enabled = false/}' supabase/config.toml
+          supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor --ignore-health-check
+          cp "$RUNNER_TEMP/supabase-config.toml" supabase/config.toml
+          trap - EXIT
         working-directory: pos-saas-infra
       - name: Dump Supabase containers after startup failure
         if: failure()
