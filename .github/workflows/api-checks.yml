@@ -97,11 +97,23 @@ jobs:
       - name: Run database tests
         run: |
           set -o pipefail
-          if ! supabase test db --local --debug 2>&1 | tee "$RUNNER_TEMP/supabase-test-db.log"; then
+          test_status=0
+          supabase test db --local 2>&1 | tee "$RUNNER_TEMP/supabase-test-db.log" || test_status=$?
+          if [ "$test_status" -ne 0 ]; then
+            docker run --rm --network host \
+              -e PGPASSWORD=postgres \
+              -v "$GITHUB_WORKSPACE/pos-saas-infra/supabase/tests:/tests:ro" \
+              public.ecr.aws/supabase/pg_prove:3.36 \
+              pg_prove --host=127.0.0.1 --port=54322 --username=postgres --dbname=postgres \
+                /tests/database/order_cash_integrity_test.sql \
+              2>&1 | tee "$RUNNER_TEMP/pg-prove-direct.log" || true
+            while IFS= read -r line; do
+              echo "::error title=Direct pgTAP diagnostic::$line"
+            done < "$RUNNER_TEMP/pg-prove-direct.log"
             while IFS= read -r line; do
               echo "::error title=Supabase database test::$line"
             done < "$RUNNER_TEMP/supabase-test-db.log"
-            exit 1
+            exit "$test_status"
           fi
         working-directory: pos-saas-infra
       - name: Upload database test log
