@@ -6,6 +6,10 @@ const migrationUrl = new URL(
   "../../pos-saas-infra/supabase/migrations/20260920100000_order_cash_integrity.sql",
   import.meta.url,
 );
+const paymentMigrationUrl = new URL(
+  "../../pos-saas-infra/supabase/migrations/20260920210208_cash_method_reconciliation.sql",
+  import.meta.url,
+);
 const orderRouteUrl = new URL(
   "../src/app/api/v1/orders/[id]/status/route.ts",
   import.meta.url,
@@ -27,6 +31,15 @@ test("la migración conserva las invariantes críticas de pedidos y caja", async
   assert.match(migration, /v_difference/);
   assert.match(migration, /p_difference_reason/);
   assert.doesNotMatch(migration, /IF EXISTS \(SELECT 1 FROM public\.orders WHERE status = 'served'\)/);
+});
+
+test("la conciliación solo convierte efectivo en movimiento de caja", async () => {
+  const migration = await readFile(paymentMigrationUrl, "utf8");
+
+  assert.match(migration, /IF p_method = 'cash' THEN/);
+  assert.match(migration, /INSERT INTO public\.payments/);
+  assert.match(migration, /INSERT INTO public\.cash_movements/);
+  assert.match(migration, /END IF;/);
 });
 
 test("las rutas de estados no realizan escrituras parciales", async () => {

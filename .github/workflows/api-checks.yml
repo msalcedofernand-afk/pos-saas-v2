@@ -25,6 +25,7 @@ jobs:
 
   migrations:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,9 +40,19 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - run: supabase db start
+      - name: Start Postgres-only Supabase stack
+        run: supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+        working-directory: pos-saas-infra
+      - name: Dump Supabase containers after startup failure
+        if: failure()
+        run: |
+          supabase status || true
+          docker ps -a
+          docker logs supabase_db_pos-saas-infra --tail 200 || true
         working-directory: pos-saas-infra
       - run: supabase db reset --local --yes
+        working-directory: pos-saas-infra
+      - run: supabase test db --local
         working-directory: pos-saas-infra
       - run: supabase db lint --local
         working-directory: pos-saas-infra
