@@ -9,7 +9,13 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 SUPABASE_SERVICE_ROLE_KEY
 STORE_DEVICE_SETUP_KEY
+WEB_ORIGIN=http://localhost:3001
+AUTH_COOKIE_SAME_SITE=lax
+AUTH_COOKIE_SECURE=false
 ```
+
+En producción usa el origen real de la web. Si la web y la API son sitios distintos,
+configura `AUTH_COOKIE_SAME_SITE=none` y `AUTH_COOKIE_SECURE=true`.
 
 Aunque la URL y la clave publishable tengan el prefijo `NEXT_PUBLIC`, en esta arquitectura sólo se usan dentro de la API. La `SUPABASE_SERVICE_ROLE_KEY`, `STORE_DEVICE_SETUP_KEY` y tokens de integraciones nunca salen del servidor.
 
@@ -19,6 +25,7 @@ La web sólo necesita conocer la URL pública de la API:
 
 ```text
 NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=http://localhost:3001
 ```
 
 La web no recibe variables `SUPABASE_*` ni claves de servicio.

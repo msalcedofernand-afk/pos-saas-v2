@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
+
 export default function HomePage() {
   return (
     <main className="shell">
@@ -18,7 +20,7 @@ export default function HomePage() {
           </p>
           <div className="actions">
             <Link className="button button-primary" href="/login">Ingresar al panel</Link>
-            <a className="button button-secondary" href="http://localhost:3000/api/v1/health">Ver API</a>
+            <a className="button button-secondary" href={`${apiUrl}/api/v1/health`}>Ver API</a>
           </div>
         </div>
 
