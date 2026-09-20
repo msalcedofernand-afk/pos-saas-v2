@@ -7,9 +7,6 @@ ALTER FUNCTION public.get_user_roles()
 ALTER FUNCTION public.handle_new_user()
   SET search_path = '';
 
-ALTER FUNCTION public.handle_new_user_security()
-  SET search_path = '';
-
 ALTER FUNCTION public.has_role(text)
   SET search_path = '';
 
