@@ -97,7 +97,7 @@ jobs:
       - name: Run database tests
         run: |
           set -o pipefail
-          if ! supabase test db --local 2>&1 | tee "$RUNNER_TEMP/supabase-test-db.log"; then
+          if ! supabase test db --local --debug 2>&1 | tee "$RUNNER_TEMP/supabase-test-db.log"; then
             while IFS= read -r line; do
               echo "::error title=Supabase database test::$line"
             done < "$RUNNER_TEMP/supabase-test-db.log"
