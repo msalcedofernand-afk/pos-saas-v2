@@ -308,20 +308,23 @@ BEGIN
     RAISE EXCEPTION 'Debes indicar el motivo de la diferencia de caja';
   END IF;
 
-  RETURN QUERY
   UPDATE public.shifts
   SET closing_amount = p_closing_amount,
       closed_at = pg_catalog.now(),
       status = 'closed'
-  WHERE public.shifts.id = v_shift.id
-  RETURNING
+  WHERE public.shifts.id = v_shift.id;
+
+  RETURN QUERY
+  SELECT
     shifts.id,
     shifts.closed_at,
     shifts.closing_amount,
     shifts.status,
     v_expected,
     v_difference,
-    v_reason;
+    v_reason
+  FROM public.shifts
+  WHERE shifts.id = v_shift.id;
 END;
 $$;
 

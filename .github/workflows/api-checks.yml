@@ -56,8 +56,17 @@ jobs:
           docker ps -a
           docker logs supabase_db_pos-saas-infra --tail 200 || true
         working-directory: pos-saas-infra
-      - run: supabase db reset --local --yes
+      - name: Apply migrations on a clean database
+        run: |
+          set -o pipefail
+          supabase db reset --local --yes 2>&1 | tee "$RUNNER_TEMP/supabase-db-reset.log"
         working-directory: pos-saas-infra
+      - name: Upload database reset log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-db-reset-log
+          path: ${{ runner.temp }}/supabase-db-reset.log
       - run: supabase test db --local
         working-directory: pos-saas-infra
       - run: supabase db lint --local
