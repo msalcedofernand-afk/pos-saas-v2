@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("landing pública tiene metadata básica", async ({ page }) => {
   await page.goto("/");
-  await expect(page).toHaveTitle(/POS SaaS V2/);
+  await expect(page).toHaveTitle(/Mesa Clara/);
   await expect(page.locator("h1")).toContainText("Opera tu negocio");
 });
 

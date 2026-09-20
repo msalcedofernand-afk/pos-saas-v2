@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { brand } from "@/config/brand";
 
 const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
@@ -14,7 +15,7 @@ export default function HomePage() {
   return (
     <main className="landing-shell">
       <nav className="nav landing-nav">
-        <Link className="brand landing-brand" href="/"><span>Mesa</span> Clara</Link>
+        <Link className="brand landing-brand" href="/"><span>{brand.shortName}</span> Clara</Link>
         <div className="nav-actions"><Link className="nav-link" href="/demo">Ver demo</Link><Link className="nav-link" href="/login">Ingresar al panel</Link></div>
       </nav>
 
@@ -42,14 +43,14 @@ export default function HomePage() {
 
       <section className="landing-product">
         <div><div className="eyebrow">Una plataforma, cada área conectada</div><h2>Del pedido a la mesa, sin perder información.</h2><p className="lead">Consulta el estado real del negocio mientras sucede. Tu equipo sabe qué hacer y tú sabes dónde actuar.</p><Link className="button button-primary" href="/demo">Explorar la demo</Link></div>
-        <div className="module-showcase"><div className="module-showcase-header"><strong>Mesa Clara</strong><span>Resumen operativo</span></div><div className="module-showcase-body"><div className="showcase-line"><span className="showcase-dot orange" />Pedidos nuevos<strong>8</strong></div><div className="showcase-line"><span className="showcase-dot blue" />En preparación<strong>5</strong></div><div className="showcase-line"><span className="showcase-dot green" />Listos para entregar<strong>3</strong></div><div className="showcase-footer">Última actualización · hace 30 s</div></div></div>
+        <div className="module-showcase"><div className="module-showcase-header"><strong>{brand.name}</strong><span>Resumen operativo</span></div><div className="module-showcase-body"><div className="showcase-line"><span className="showcase-dot orange" />Pedidos nuevos<strong>8</strong></div><div className="showcase-line"><span className="showcase-dot blue" />En preparación<strong>5</strong></div><div className="showcase-line"><span className="showcase-dot green" />Listos para entregar<strong>3</strong></div><div className="showcase-footer">Última actualización · hace 30 s</div></div></div>
       </section>
 
       <section className="modules-section"><div className="eyebrow">Módulos para crecer</div><h2>Empieza con lo que necesitas.</h2><div className="module-grid">{modules.map((module) => <span key={module}>{module}</span>)}</div></section>
 
       <section className="landing-cta"><div><div className="eyebrow">Tu próximo turno puede ser más simple</div><h2>Prueba la operación completa.</h2></div><Link className="button button-primary" href="/demo">Ver demo</Link></section>
 
-      <footer className="landing-footer"><Link className="brand landing-brand" href="/"><span>Mesa</span> Clara</Link><span>Pedidos, cocina y caja en sincronía.</span><div><a href={`${apiUrl}/api/v1/health`}>Estado de la API</a><Link href="/login">Ingresar</Link></div></footer>
+      <footer className="landing-footer"><Link className="brand landing-brand" href="/"><span>{brand.shortName}</span> Clara</Link><span>Pedidos, cocina y caja en sincronía.</span><div><a href={`${apiUrl}/api/v1/health`}>Estado de la API</a><Link href="/login">Ingresar</Link></div></footer>
     </main>
   );
 }

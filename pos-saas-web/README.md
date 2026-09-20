@@ -29,6 +29,12 @@ npm test
 
 Las pruebas públicas corren sin configuración adicional. Para habilitar los flujos
 contra una API y base de datos de pruebas, define `PLAYWRIGHT_API_URL`, `E2E_EMAIL`,
-`E2E_PASSWORD` y, opcionalmente, `E2E_RESTRICTED_EMAIL` y `E2E_RESTRICTED_PASSWORD`.
+`E2E_PASSWORD`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` y las credenciales restringidas.
+La cuenta admin se usa exclusivamente para preparar y limpiar productos; la cuenta
+de operación puede ser admin, cashier o waiter.
+
+GitHub Actions ejecuta smoke tests en cada push y pull request. El workflow E2E se
+ejecuta manualmente contra una URL desplegada y falla antes de probar si faltan
+los secretos de web, API o usuarios E2E.
 
 Las pantallas del proyecto anterior permanecen en `../pos-saas-main` y se migrarán gradualmente, reemplazando sus consultas directas por llamadas a la API.

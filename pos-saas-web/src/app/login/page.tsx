@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api/client";
+import { brand } from "@/config/brand";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function LoginPage() {
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <div className="eyebrow">POS SaaS</div>
+        <div className="eyebrow">{brand.name}</div>
         <h1>Iniciar sesión</h1>
         <p className="lead auth-lead">Accede al panel de administración de tu negocio.</p>
 
