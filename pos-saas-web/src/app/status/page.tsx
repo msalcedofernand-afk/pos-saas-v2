@@ -21,9 +21,6 @@ export default function StatusPage() {
           {brand.name}
         </Link>
         <div className="nav-actions">
-          <Link className="nav-link" href="/demo">
-            Ver demo
-          </Link>
           <Link className="button button-primary button-small" href="/login">
             Ingresar
           </Link>

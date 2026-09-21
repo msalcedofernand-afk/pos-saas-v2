@@ -23,9 +23,6 @@ export default function HomePage() {
           <span>{brand.shortName}</span> Clara
         </Link>
         <div className="nav-actions">
-          <Link className="nav-link" href="/demo">
-            Ver demo
-          </Link>
           <Link className="nav-link" href="/login">
             Ingresar al panel
           </Link>
@@ -41,11 +38,11 @@ export default function HomePage() {
             turno.
           </p>
           <div className="actions">
-            <Link className="button button-primary" href="/demo">
-              Ver demo
+            <Link className="button button-primary" href="/login">
+              Ingresar al panel
             </Link>
             <Link className="button button-secondary" href="/login">
-              Ingresar al panel
+              Conocer la plataforma
             </Link>
           </div>
           <p className="landing-note">Diseñado para restaurantes que quieren crecer sin perder el ritmo.</p>
@@ -111,8 +108,8 @@ export default function HomePage() {
           <p className="lead">
             Consulta el estado real del negocio mientras sucede. Tu equipo sabe qué hacer y tú sabes dónde actuar.
           </p>
-          <Link className="button button-primary" href="/demo">
-            Explorar la demo
+          <Link className="button button-primary" href="/login">
+            Entrar a la plataforma
           </Link>
         </div>
         <div className="module-showcase">
@@ -153,8 +150,8 @@ export default function HomePage() {
           <div className="eyebrow">Tu próximo turno puede ser más simple</div>
           <h2>Prueba la operación completa.</h2>
         </div>
-        <Link className="button button-primary" href="/demo">
-          Ver demo
+        <Link className="button button-primary" href="/login">
+          Empezar ahora
         </Link>
       </section>
 
