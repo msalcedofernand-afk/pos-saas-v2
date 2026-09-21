@@ -54,7 +54,7 @@ sleep 0.4
 set +e
 psql_exec -c "
   SELECT public.create_order_transaction(
-    '$actor_id', '$table_id', 1, NULL,
+    '$actor_id', '$organization_id', '$table_id', 1, NULL,
     '[{\"product_id\":\"$product_id\",\"quantity\":1}]'::jsonb
   );
 " >"$contender_log" 2>&1
