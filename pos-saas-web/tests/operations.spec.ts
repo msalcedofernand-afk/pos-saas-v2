@@ -21,7 +21,7 @@ async function login(request: APIRequestContext, credentials: { email?: string; 
   const response = await request.post(`${apiUrl}/api/v1/auth/login`, { data: credentials });
   expect(response.status(), await response.text()).toBe(200);
   return response.json() as Promise<{
-    data: { user: { roles: string[]; organizationId: string }; csrfToken: string };
+    data: { user: { organizationId: string }; roles: string[]; csrfToken: string };
   }>;
 }
 
@@ -95,7 +95,7 @@ test.describe("operaciones autenticadas", () => {
   test("login correcto", async ({ request }) => {
     requireOrSkip(configured, "Configura E2E_EMAIL, E2E_PASSWORD, E2E_ADMIN_EMAIL y E2E_ADMIN_PASSWORD");
     const result = await login(request, actorCredentials);
-    expect(result.data.user.roles.length).toBeGreaterThan(0);
+    expect(result.data.roles.length).toBeGreaterThan(0);
   });
 
   test("login incorrecto", async ({ request }) => {
@@ -134,7 +134,7 @@ test.describe("operaciones autenticadas", () => {
     try {
       const result = await login(adminApi, adminCredentials);
       adminCsrfToken = result.data.csrfToken;
-      requireOrSkip(result.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
+      requireOrSkip(result.data.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
       product = await createTestProduct(adminApi, result.data.csrfToken);
       expect(product.id).toBeTruthy();
     } finally {
@@ -153,12 +153,12 @@ test.describe("operaciones autenticadas", () => {
     try {
       const admin = await login(adminApi, adminCredentials);
       adminCsrfToken = admin.data.csrfToken;
-      requireOrSkip(admin.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
+      requireOrSkip(admin.data.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
       product = await createTestProduct(adminApi, admin.data.csrfToken);
       const actor = await login(request, actorCredentials);
       actorCsrfToken = actor.data.csrfToken;
       requireOrSkip(
-        actor.data.user.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)),
+        actor.data.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)),
         "La cuenta E2E no puede crear pedidos",
       );
       orderId = (await createTestOrder(request, product.id, actor.data.csrfToken)).id;
@@ -183,12 +183,12 @@ test.describe("operaciones autenticadas", () => {
     try {
       const admin = await login(adminApi, adminCredentials);
       adminCsrfToken = admin.data.csrfToken;
-      requireOrSkip(admin.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
+      requireOrSkip(admin.data.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
       product = await createTestProduct(adminApi, admin.data.csrfToken);
       const actor = await login(request, actorCredentials);
       actorCsrfToken = actor.data.csrfToken;
       requireOrSkip(
-        actor.data.user.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)),
+        actor.data.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)),
         "La cuenta E2E no puede cancelar pedidos",
       );
       orderId = await createTestOrder(request, product.id, actor.data.csrfToken).then((order) => order.id);
@@ -211,7 +211,7 @@ test.describe("operaciones autenticadas", () => {
     requireOrSkip(configured, "Configura E2E_EMAIL y E2E_PASSWORD para pruebas contra una API real");
     const result = await login(request, actorCredentials);
     requireOrSkip(
-      result.data.user.roles.some((role) => ["admin", "cashier"].includes(role)),
+      result.data.roles.some((role) => ["admin", "cashier"].includes(role)),
       "La cuenta E2E no puede operar caja",
     );
     const summary = await (await request.get(`${apiUrl}/api/v1/cash/summary`)).json();
@@ -246,7 +246,7 @@ test.describe("operaciones autenticadas", () => {
     try {
       const admin = await login(adminApi, adminCredentials);
       adminCsrfToken = admin.data.csrfToken;
-      requireOrSkip(admin.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
+      requireOrSkip(admin.data.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
       product = await createTestProduct(adminApi, admin.data.csrfToken);
       orderId = await createTestOrder(adminApi, product.id, admin.data.csrfToken).then((order) => order.id);
       for (const status of ["preparing", "ready", "served"]) {
@@ -269,9 +269,9 @@ test.describe("operaciones autenticadas", () => {
       data: { email: process.env.E2E_RESTRICTED_EMAIL, password: process.env.E2E_RESTRICTED_PASSWORD },
     });
     expect(response.status()).toBe(200);
-    const result = (await response.json()) as { data: { user: { roles: string[] } } };
+    const result = (await response.json()) as { data: { roles: string[] } };
     requireOrSkip(
-      !result.data.user.roles.some((role) => ["admin", "cashier"].includes(role)),
+      !result.data.roles.some((role) => ["admin", "cashier"].includes(role)),
       "La cuenta restringida debe no tener permisos de caja",
     );
     const cash = await request.get(`${apiUrl}/api/v1/cash/summary`);
