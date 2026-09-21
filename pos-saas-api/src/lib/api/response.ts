@@ -24,9 +24,19 @@ export function handleApiError(error: unknown) {
   return apiError("Error interno del servidor", 500);
 }
 
-export function rpcApiError(error: { message?: string } | null | undefined, fallback: string) {
-  const message = error?.message?.toLowerCase() ?? "";
+type RpcError = {
+  code?: string;
+  message?: string;
+  details?: string;
+  hint?: string;
+};
+
+export function rpcApiError(error: RpcError | null | undefined, fallback: string) {
+  const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ").toLowerCase();
+  const code = error?.code;
   if (message.includes("no encontrado")) return apiError("Recurso no encontrado", 404);
+  if (code === "P0001" || code === "23505" || code === "23503") return apiError(fallback, 409);
+  if (code === "23514" || code === "22P02") return apiError("Datos inválidos", 400);
   if (
     message.includes("inválid") ||
     message.includes("invalida") ||
