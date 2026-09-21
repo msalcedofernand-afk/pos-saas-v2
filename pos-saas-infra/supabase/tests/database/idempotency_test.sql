@@ -16,7 +16,7 @@ VALUES ('00000000-0000-0000-0000-000000000303', '00000000-0000-0000-0000-0000000
 
 SELECT lives_ok(
   $$SELECT public.create_order_transaction_idempotent(
-    '00000000-0000-0000-0000-000000000301', NULL, 1, NULL,
+    '00000000-0000-0000-0000-000000000301', '00000000-0000-0000-0000-000000000001', NULL, 1, NULL,
     '[{"product_id":"00000000-0000-0000-0000-000000000303","quantity":1}]'::jsonb,
     'order-key-1', repeat('a', 64)
   )$$,
@@ -32,7 +32,7 @@ SELECT is(
 SELECT is(
   (SELECT count(*)::integer FROM public.orders WHERE id = (
     SELECT (public.create_order_transaction_idempotent(
-      '00000000-0000-0000-0000-000000000301', NULL, 1, NULL,
+      '00000000-0000-0000-0000-000000000301', '00000000-0000-0000-0000-000000000001', NULL, 1, NULL,
       '[{"product_id":"00000000-0000-0000-0000-000000000303","quantity":1}]'::jsonb,
       'order-key-1', repeat('a', 64)
     )->>'orderId')::uuid
@@ -43,7 +43,7 @@ SELECT is(
 
 SELECT throws_ok(
   $$SELECT public.create_order_transaction_idempotent(
-    '00000000-0000-0000-0000-000000000301', NULL, 2, NULL,
+    '00000000-0000-0000-0000-000000000301', '00000000-0000-0000-0000-000000000001', NULL, 2, NULL,
     '[{"product_id":"00000000-0000-0000-0000-000000000303","quantity":1}]'::jsonb,
     'order-key-1', repeat('b', 64)
   )$$,

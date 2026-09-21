@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
     if (!idempotencyKey) return apiError("Falta el header Idempotency-Key", 400);
     const db = createAdminClient();
     const { data: rawResult, error: transactionError } = await db.rpc("create_order_transaction_idempotent", {
+      p_organization_id: auth.user.organizationId,
       p_user_id: auth.user.id,
       p_table_id: body.tableId ?? null,
       p_guests: body.guests,

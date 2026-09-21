@@ -1363,6 +1363,7 @@ export type Database = {
           p_guests: number;
           p_items: Json;
           p_notes: string;
+          p_organization_id: string;
           p_table_id: string;
           p_user_id: string;
         };
@@ -1374,6 +1375,7 @@ export type Database = {
           p_idempotency_key: string;
           p_items: Json;
           p_notes: string;
+          p_organization_id: string;
           p_request_hash: string;
           p_table_id: string | null;
           p_user_id: string;
