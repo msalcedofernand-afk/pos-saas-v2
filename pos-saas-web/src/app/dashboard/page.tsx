@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { apiFetch, setActiveOrganizationId } from "@/lib/api/client";
 import { brand } from "@/config/brand";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+import { useApiHealth } from "@/hooks/useApiHealth";
 
 const moduleRules = [
   {
@@ -67,7 +68,8 @@ function displayMetric<T>(
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { session, metrics, metricStates, metricsWarning, error } = useDashboardMetrics();
+  const { session, metrics, metricStates, metricsWarning, error, updatedAt, refresh } = useDashboardMetrics();
+  const { health, refresh: refreshHealth } = useApiHealth();
   const [organizations, setOrganizations] = useState<Array<{ id: string; name: string }>>([]);
   const [organizationsLoading, setOrganizationsLoading] = useState(true);
   const [organizationsError, setOrganizationsError] = useState<string | null>(null);
@@ -120,7 +122,9 @@ export default function DashboardPage() {
   const isKitchenUser = session?.roles.includes("kitchen") ?? false;
   const canCreateOrder = session?.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)) ?? false;
   const canOpenCash = session?.roles.some((role) => ["admin", "cashier"].includes(role)) ?? false;
+  const isAdmin = session?.roles.includes("admin") ?? false;
   const emailName = session?.email?.split("@")[0] ?? "usuario";
+  const refreshedLabel = updatedAt?.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
   const cards = [
     {
       label: "Ventas de hoy",
@@ -205,6 +209,36 @@ export default function DashboardPage() {
         </p>
       )}
       {organizationsLoading && <p className="dashboard-warning">Cargando organizaciones…</p>}
+      <section
+        className={`dashboard-health health-${health.status}`}
+        aria-label="Estado de la plataforma"
+        aria-live="polite"
+      >
+        <span className="status-dot" />
+        <div>
+          <strong>
+            {health.status === "online"
+              ? "Plataforma operativa"
+              : health.status === "offline"
+                ? "Problemas de conexión"
+                : "Verificando plataforma"}
+          </strong>
+          <small>
+            API: {health.apiStatus ?? "—"} · Base de datos: {health.supabaseStatus ?? "—"}
+            {health.latencyMs !== null ? ` · ${health.latencyMs} ms` : ""}
+          </small>
+        </div>
+        <button
+          className="button button-small"
+          onClick={() => {
+            refresh();
+            void refreshHealth();
+          }}
+          type="button"
+        >
+          Actualizar
+        </button>
+      </section>
       <section className="dashboard-actions" aria-label="Acciones principales">
         {canCreateOrder && (
           <Link className="button button-primary" href="/dashboard/orders">
@@ -252,6 +286,45 @@ export default function DashboardPage() {
           <strong>{session?.roles.length ?? "—"}</strong>
         </div>
       </section>
+      {isAdmin && (
+        <section className="dashboard-admin-summary" aria-label="Resumen administrativo">
+          <div className="section-heading">
+            <div>
+              <div className="eyebrow">Control administrativo</div>
+              <h2>
+                Resumen de{" "}
+                {organizations.find((organization) => organization.id === session?.organizationId)?.name ??
+                  "tu negocio"}
+              </h2>
+            </div>
+            <small>{refreshedLabel ? `Actualizado ${refreshedLabel}` : "Actualizando…"}</small>
+          </div>
+          <div className="admin-summary-grid">
+            <div>
+              <span>Ventas del día</span>
+              <strong>{displayMetric(metrics.sales, metricStates.sales, (value) => `S/ ${value.toFixed(2)}`)}</strong>
+            </div>
+            <div>
+              <span>Pedidos activos</span>
+              <strong>{displayMetric(metrics.activeOrders, metricStates.activeOrders)}</strong>
+            </div>
+            <div>
+              <span>Estado de caja</span>
+              <strong>
+                {displayMetric(metrics.cashOpen, metricStates.cashOpen, (value) => (value ? "Abierta" : "Cerrada"))}
+              </strong>
+            </div>
+            <div>
+              <span>Alertas de stock</span>
+              <strong>{displayMetric(metrics.lowStock, metricStates.lowStock)}</strong>
+            </div>
+          </div>
+          <div className="admin-summary-links">
+            <Link href="/dashboard/reports">Ver reportes</Link>
+            <Link href="/dashboard/settings">Administrar usuarios y roles</Link>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

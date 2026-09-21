@@ -21,6 +21,12 @@ test("rutas SEO públicas están disponibles", async ({ request }) => {
   expect((await request.get("/icon.svg")).ok()).toBeTruthy();
 });
 
+test("página pública de estado muestra la salud del servicio", async ({ page }) => {
+  await page.goto("/status");
+  await expect(page.locator("h1")).toContainText("Todo lo que necesitas");
+  await expect(page.getByRole("button", { name: "Actualizar" })).toBeVisible();
+});
+
 test("dashboard solicita autenticación", async ({ page }) => {
   await page.route("**/api/v1/auth/me", (route) =>
     route.fulfill({

@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { brand } from "@/config/brand";
 
-const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
-
 const benefits = [
   {
     title: "Toma pedidos sin duplicar trabajo",
@@ -166,7 +164,7 @@ export default function HomePage() {
         </Link>
         <span>Pedidos, cocina y caja en sincronía.</span>
         <div>
-          <a href={`${apiUrl}/api/v1/health`}>Estado de la API</a>
+          <Link href="/status">Estado del servicio</Link>
           <Link href="/login">Ingresar</Link>
         </div>
       </footer>

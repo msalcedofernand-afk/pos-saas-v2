@@ -59,6 +59,12 @@ export function useDashboardMetrics() {
   const [metricStates, setMetricStates] = useState<Record<DashboardMetricKey, MetricState>>(initialStates);
   const [metricsWarning, setMetricsWarning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  function refresh() {
+    setRefreshKey((value) => value + 1);
+  }
 
   useEffect(() => {
     let active = true;
@@ -104,6 +110,7 @@ export function useDashboardMetrics() {
           productCount: values?.productCount ?? null,
           categoryCount: values?.categoryCount ?? null,
         });
+        setUpdatedAt(new Date());
       } catch (cause) {
         if (!active) return;
         const message = cause instanceof Error ? cause.message : "No se pudo cargar el panel";
@@ -116,7 +123,7 @@ export function useDashboardMetrics() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [refreshKey, router]);
 
-  return { session, metrics, metricStates, metricsWarning, error };
+  return { session, metrics, metricStates, metricsWarning, error, updatedAt, refresh };
 }
