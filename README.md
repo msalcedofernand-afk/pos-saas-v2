@@ -8,6 +8,17 @@ Nueva base del POS SaaS, separada del proyecto legacy.
 - `pos-saas-web`: frontend web del POS.
 - `pos-saas-infra`: migraciones y configuración de Supabase.
 
+## Documentación operativa
+
+- [Guía de despliegue, health checks, monitoreo, backup y rollback](DEPLOYMENT.md).
+- [Política de seguridad y reporte de incidentes](SECURITY.md).
+- [Documentación de la web y sus pruebas](pos-saas-web/README.md).
+- [Documentación de infraestructura y migraciones](pos-saas-infra/README.md).
+
+La arquitectura actual mantiene Supabase sólo detrás de la API, aplica aislamiento
+por organización y valida las operaciones mediante API checks, smoke tests y E2E
+autenticado en staging.
+
 ## Desarrollo local
 
 ```bash

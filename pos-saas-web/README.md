@@ -34,7 +34,8 @@ La cuenta admin se usa exclusivamente para preparar y limpiar productos; la cuen
 de operación puede ser admin, cashier o waiter.
 
 GitHub Actions ejecuta smoke tests en cada push y pull request. El workflow E2E se
-ejecuta manualmente contra una URL desplegada y falla antes de probar si faltan
-los secretos de web, API o usuarios E2E.
+puede ejecutar manualmente y también se activa después de cada push a `main`.
+Antes de probar espera que la API y la web de staging respondan; falla antes de
+probar si faltan los secretos de web, API o usuarios E2E.
 
 Las pantallas del proyecto anterior permanecen en `../pos-saas-main` y se migrarán gradualmente, reemplazando sus consultas directas por llamadas a la API.
