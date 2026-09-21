@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, setActiveOrganizationId } from "@/lib/api/client";
 import { brand } from "@/config/brand";
@@ -69,21 +69,34 @@ export default function DashboardPage() {
   const router = useRouter();
   const { session, metrics, metricStates, metricsWarning, error } = useDashboardMetrics();
   const [organizations, setOrganizations] = useState<Array<{ id: string; name: string }>>([]);
+  const [organizationsLoading, setOrganizationsLoading] = useState(true);
+  const [organizationsError, setOrganizationsError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    void apiFetch<{
-      data: Array<{ id: string; name: string; slug: string; isDefault: boolean }>;
-      activeOrganizationId: string;
-    }>("/api/v1/organizations").then((response) => {
-      if (!active) return;
+  const loadOrganizations = useCallback(async () => {
+    setOrganizationsLoading(true);
+    try {
+      const response = await apiFetch<{
+        data: Array<{ id: string; name: string; slug: string; isDefault: boolean }>;
+        activeOrganizationId: string;
+      }>("/api/v1/organizations");
       setOrganizations(response.data);
       setActiveOrganizationId(response.activeOrganizationId);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+      setOrganizationsError(null);
+    } catch (cause) {
+      const status = (cause as Error & { status?: number }).status;
+      if (status === 401) {
+        router.replace("/login");
+        return;
+      }
+      setOrganizationsError(cause instanceof Error ? cause.message : "No se pudieron cargar las organizaciones");
+    } finally {
+      setOrganizationsLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    void loadOrganizations();
+  }, [loadOrganizations]);
 
   function switchOrganization(organizationId: string) {
     setActiveOrganizationId(organizationId);
@@ -183,6 +196,15 @@ export default function DashboardPage() {
           Algunas métricas no pudieron actualizarse. Revisa la conexión o los permisos.
         </p>
       )}
+      {organizationsError && (
+        <p className="dashboard-warning" role="alert">
+          No se pudieron cargar tus organizaciones. {organizationsError}
+          <button className="button button-small" onClick={() => void loadOrganizations()} type="button">
+            Reintentar
+          </button>
+        </p>
+      )}
+      {organizationsLoading && <p className="dashboard-warning">Cargando organizaciones…</p>}
       <section className="dashboard-actions" aria-label="Acciones principales">
         {canCreateOrder && (
           <Link className="button button-primary" href="/dashboard/orders">
