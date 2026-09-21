@@ -3,33 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getAuthCookieOptions } from "@/lib/supabase/cookie-options";
 
 export async function updateSession(request: NextRequest) {
-  // --- GUARDIA DE DISPOSITIVO (DEVICE COOKIE) ---
   const { pathname } = request.nextUrl;
   const isApiRoute = pathname.startsWith("/api/");
   const isPublicApiRoute = pathname === "/api/v1/health";
-
-  // Permitimos el acceso sin cookie sólo a recursos estáticos, la ruta de registro, y la pantalla de no autorizado
-  if (
-    !isApiRoute &&
-    !pathname.startsWith("/_next") &&
-    !pathname.startsWith("/api/auth") &&
-    !pathname.startsWith("/api/db") &&
-    !isPublicApiRoute &&
-    pathname !== "/setup-device" &&
-    pathname !== "/unauthorized-device" &&
-    !pathname.match(/\.(svg|png|jpg|jpeg|gif|webp)$/)
-  ) {
-    const isAuthorizedDevice = request.cookies.get('pos_device_authorized')?.value === 'true';
-    if (!isAuthorizedDevice) {
-      if (isApiRoute) {
-        return NextResponse.json({ error: { code: "DEVICE_NOT_AUTHORIZED", message: "Dispositivo no autorizado" } }, { status: 403 });
-      }
-      const url = request.nextUrl.clone();
-      url.pathname = "/unauthorized-device";
-      return NextResponse.redirect(url);
-    }
-  }
-  // --- FIN GUARDIA DE DISPOSITIVO ---
 
   if (isPublicApiRoute) {
     return NextResponse.next();
@@ -81,8 +57,6 @@ export async function updateSession(request: NextRequest) {
     !isPublicApiRoute &&
     !isApiRoute &&
     pathname !== "/login" &&
-    pathname !== "/unauthorized-device" &&
-    pathname !== "/setup-device" &&
     !pathname.startsWith("/_next") &&
     !pathname.startsWith("/api/auth/callback") &&
     !pathname.startsWith("/api/auth/users") &&

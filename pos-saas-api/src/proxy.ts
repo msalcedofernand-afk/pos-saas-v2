@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
+import { hasValidCsrfToken, isCsrfExemptPath, isProtectedMethod } from "@/lib/security/csrf";
 
 const allowedOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3001";
 
@@ -23,9 +24,28 @@ export async function proxy(request: NextRequest) {
       response.headers.set("Access-Control-Allow-Origin", origin);
       response.headers.set("Access-Control-Allow-Credentials", "true");
       response.headers.set("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
-      response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+      response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-CSRF-Token");
     }
     addVaryOrigin(response);
+    return response;
+  }
+
+  if (
+    isApiRoute &&
+    isProtectedMethod(request.method) &&
+    !isCsrfExemptPath(request.nextUrl.pathname) &&
+    !hasValidCsrfToken(request)
+  ) {
+    const response = NextResponse.json(
+      { error: { code: "CSRF_VALIDATION_FAILED", message: "Token CSRF inválido o ausente" } },
+      { status: 403 },
+    );
+    response.headers.set("Cache-Control", "no-store");
+    addVaryOrigin(response);
+    if (origin === allowedOrigin) {
+      response.headers.set("Access-Control-Allow-Origin", origin);
+      response.headers.set("Access-Control-Allow-Credentials", "true");
+    }
     return response;
   }
 

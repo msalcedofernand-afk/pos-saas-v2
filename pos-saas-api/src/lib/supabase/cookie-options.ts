@@ -27,3 +27,11 @@ export function getAuthCookieOptions(): CookieOptions {
     secure: getSecure(sameSite),
   };
 }
+
+export function getCsrfCookieOptions(): CookieOptions {
+  return {
+    ...getAuthCookieOptions(),
+    httpOnly: false,
+    maxAge: 60 * 60 * 8,
+  };
+}

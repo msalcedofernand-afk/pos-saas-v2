@@ -18,24 +18,28 @@ function requireOrSkip(condition: boolean, reason: string) {
 async function login(request: APIRequestContext, credentials: { email?: string; password?: string }) {
   const response = await request.post(`${apiUrl}/api/v1/auth/login`, { data: credentials });
   expect(response.status(), await response.text()).toBe(200);
-  return response.json() as Promise<{ data: { user: { roles: string[] } } }>;
+  return response.json() as Promise<{ data: { user: { roles: string[] }; csrfToken: string } }>;
 }
 
-async function createTestProduct(adminApi: APIRequestContext) {
+function csrfOptions(csrfToken: string, data?: unknown) {
+  return { data, headers: { "X-CSRF-Token": csrfToken } };
+}
+
+async function createTestProduct(adminApi: APIRequestContext, csrfToken: string) {
   const categoriesResponse = await adminApi.get(`${apiUrl}/api/v1/categories`);
   const categories = (await categoriesResponse.json()).data as { id: string }[];
   expect(categories.length).toBeGreaterThan(0);
-  const response = await adminApi.post(`${apiUrl}/api/v1/products`, {
-    data: { categoryId: categories[0].id, name: `E2E producto ${Date.now()}`, price: 9.9, isAvailable: true, prepTimeMinutes: 5 },
-  });
+  const response = await adminApi.post(`${apiUrl}/api/v1/products`, csrfOptions(csrfToken, {
+    categoryId: categories[0].id, name: `E2E producto ${Date.now()}`, price: 9.9, isAvailable: true, prepTimeMinutes: 5,
+  }));
   expect(response.status(), await response.text()).toBe(201);
   return (await response.json()).data as { id: string };
 }
 
-async function createTestOrder(actorApi: APIRequestContext, productId: string) {
-  const response = await actorApi.post(`${apiUrl}/api/v1/orders`, {
-    data: { tableId: null, guests: 1, items: [{ productId, quantity: 1 }] },
-  });
+async function createTestOrder(actorApi: APIRequestContext, productId: string, csrfToken: string) {
+  const response = await actorApi.post(`${apiUrl}/api/v1/orders`, csrfOptions(csrfToken, {
+    tableId: null, guests: 1, items: [{ productId, quantity: 1 }],
+  }));
   expect(response.status(), await response.text()).toBe(201);
   return (await response.json()).data as { id: string };
 }
@@ -57,14 +61,16 @@ test.describe("operaciones autenticadas", () => {
     requireOrSkip(configured, "Configura E2E_ADMIN_EMAIL y E2E_ADMIN_PASSWORD para preparar productos");
     const adminApi = await requestContext.newContext();
     let productId: string | undefined;
+    let adminCsrfToken: string | undefined;
     try {
       const result = await login(adminApi, adminCredentials);
+      adminCsrfToken = result.data.csrfToken;
       requireOrSkip(result.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
-      const product = await createTestProduct(adminApi);
+      const product = await createTestProduct(adminApi, result.data.csrfToken);
       productId = product.id;
       expect(productId).toBeTruthy();
     } finally {
-      if (productId) await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`);
+      if (productId && adminCsrfToken) await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`, csrfOptions(adminCsrfToken));
       await adminApi.dispose();
     }
   });
@@ -74,17 +80,21 @@ test.describe("operaciones autenticadas", () => {
     const adminApi = await requestContext.newContext();
     let productId: string | undefined;
     let orderId: string | undefined;
+    let adminCsrfToken: string | undefined;
+    let actorCsrfToken: string | undefined;
     try {
       const admin = await login(adminApi, adminCredentials);
+      adminCsrfToken = admin.data.csrfToken;
       requireOrSkip(admin.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
-      productId = (await createTestProduct(adminApi)).id;
+      productId = (await createTestProduct(adminApi, admin.data.csrfToken)).id;
       const actor = await login(request, actorCredentials);
+      actorCsrfToken = actor.data.csrfToken;
       requireOrSkip(actor.data.user.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)), "La cuenta E2E no puede crear pedidos");
-      orderId = (await createTestOrder(request, productId)).id;
+      orderId = (await createTestOrder(request, productId, actor.data.csrfToken)).id;
       expect(orderId).toBeTruthy();
     } finally {
-      if (orderId) await request.patch(`${apiUrl}/api/v1/orders/${orderId}/status`, { data: { status: "cancelled" } }).catch(() => undefined);
-      if (productId) await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`);
+      if (orderId && actorCsrfToken) await request.patch(`${apiUrl}/api/v1/orders/${orderId}/status`, csrfOptions(actorCsrfToken, { status: "cancelled" })).catch(() => undefined);
+      if (productId && adminCsrfToken) await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`, csrfOptions(adminCsrfToken));
       await adminApi.dispose();
     }
   });
@@ -94,18 +104,22 @@ test.describe("operaciones autenticadas", () => {
     const adminApi = await requestContext.newContext();
     let productId: string | undefined;
     let orderId: string | undefined;
+    let adminCsrfToken: string | undefined;
+    let actorCsrfToken: string | undefined;
     try {
       const admin = await login(adminApi, adminCredentials);
+      adminCsrfToken = admin.data.csrfToken;
       requireOrSkip(admin.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
-      productId = (await createTestProduct(adminApi)).id;
+      productId = (await createTestProduct(adminApi, admin.data.csrfToken)).id;
       const actor = await login(request, actorCredentials);
+      actorCsrfToken = actor.data.csrfToken;
       requireOrSkip(actor.data.user.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)), "La cuenta E2E no puede cancelar pedidos");
-      orderId = await createTestOrder(request, productId).then((order) => order.id);
-      const cancelled = await request.patch(`${apiUrl}/api/v1/orders/${orderId}/status`, { data: { status: "cancelled" } });
+      orderId = await createTestOrder(request, productId, actor.data.csrfToken).then((order) => order.id);
+      const cancelled = await request.patch(`${apiUrl}/api/v1/orders/${orderId}/status`, csrfOptions(actor.data.csrfToken, { status: "cancelled" }));
       expect(cancelled.status()).toBe(200);
     } finally {
-      if (orderId) await request.patch(`${apiUrl}/api/v1/orders/${orderId}/status`, { data: { status: "cancelled" } }).catch(() => undefined);
-      if (productId) await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`);
+      if (orderId && actorCsrfToken) await request.patch(`${apiUrl}/api/v1/orders/${orderId}/status`, csrfOptions(actorCsrfToken, { status: "cancelled" })).catch(() => undefined);
+      if (productId && adminCsrfToken) await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`, csrfOptions(adminCsrfToken));
       await adminApi.dispose();
     }
   });
@@ -119,8 +133,8 @@ test.describe("operaciones autenticadas", () => {
       expect(summary.data.shift.status).toBe("open");
       return;
     }
-    expect((await request.post(`${apiUrl}/api/v1/cash/open`, { data: { openingAmount: 0 } })).status()).toBe(201);
-    expect((await request.post(`${apiUrl}/api/v1/cash/close`, { data: { closingAmount: 0 } })).status()).toBe(200);
+    expect((await request.post(`${apiUrl}/api/v1/cash/open`, csrfOptions(result.data.csrfToken, { openingAmount: 0 }))).status()).toBe(201);
+    expect((await request.post(`${apiUrl}/api/v1/cash/close`, csrfOptions(result.data.csrfToken, { closingAmount: 0 }))).status()).toBe(200);
   });
 
   test("cambio de estados en cocina", async ({ request }) => {
@@ -128,17 +142,19 @@ test.describe("operaciones autenticadas", () => {
     const adminApi = await requestContext.newContext();
     let productId: string | undefined;
     let orderId: string | undefined;
+    let adminCsrfToken: string | undefined;
     try {
       const admin = await login(adminApi, adminCredentials);
+      adminCsrfToken = admin.data.csrfToken;
       requireOrSkip(admin.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
-      productId = (await createTestProduct(adminApi)).id;
-      orderId = await createTestOrder(adminApi, productId).then((order) => order.id);
+      productId = (await createTestProduct(adminApi, admin.data.csrfToken)).id;
+      orderId = await createTestOrder(adminApi, productId, admin.data.csrfToken).then((order) => order.id);
       for (const status of ["preparing", "ready", "served"]) {
-        const response = await adminApi.patch(`${apiUrl}/api/v1/kitchen/orders/${orderId}/status`, { data: { status } });
+        const response = await adminApi.patch(`${apiUrl}/api/v1/kitchen/orders/${orderId}/status`, csrfOptions(admin.data.csrfToken, { status }));
         expect(response.status(), await response.text()).toBe(200);
       }
     } finally {
-      if (productId) await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`);
+      if (productId && adminCsrfToken) await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`, csrfOptions(adminCsrfToken));
       await adminApi.dispose();
     }
   });
