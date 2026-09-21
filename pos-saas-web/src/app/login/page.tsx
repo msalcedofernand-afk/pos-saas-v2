@@ -34,14 +34,23 @@ export default function LoginPage() {
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <div className="eyebrow">{brand.name}</div>
+        <div className="auth-brand-lockup">
+          <span className="auth-brand-mark" aria-hidden="true">
+            MC
+          </span>
+          <div>
+            <div className="auth-brand-name">{brand.name}</div>
+            <div className="auth-brand-context">Panel operativo</div>
+          </div>
+        </div>
         <h1>Iniciar sesión</h1>
-        <p className="lead auth-lead">Accede al panel de administración de tu negocio.</p>
+        <p className="lead auth-lead">Entra para revisar el turno, pedidos, caja y operación de tu restaurante.</p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          <label>
+          <label htmlFor="login-email">
             Correo electrónico
             <input
+              id="login-email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -49,9 +58,10 @@ export default function LoginPage() {
               required
             />
           </label>
-          <label>
+          <label htmlFor="login-password">
             Contraseña
             <input
+              id="login-password"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
