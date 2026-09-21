@@ -1,6 +1,8 @@
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
 let csrfToken: string | null = null;
-let activeOrganizationId: string | null = null;
+const activeOrganizationStorageKey = "mesa-clara.active-organization";
+let activeOrganizationId: string | null =
+  typeof window === "undefined" ? null : window.sessionStorage.getItem(activeOrganizationStorageKey);
 
 const mutatingMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -10,6 +12,10 @@ export function createIdempotencyKey(): string {
 
 export function setActiveOrganizationId(organizationId: string | null) {
   activeOrganizationId = organizationId;
+  if (typeof window !== "undefined") {
+    if (organizationId) window.sessionStorage.setItem(activeOrganizationStorageKey, organizationId);
+    else window.sessionStorage.removeItem(activeOrganizationStorageKey);
+  }
 }
 
 export function getActiveOrganizationId() {
