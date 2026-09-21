@@ -244,7 +244,8 @@ AS $$
   WHERE om.user_id = (SELECT auth.uid());
 $$;
 REVOKE ALL ON FUNCTION public.get_user_roles() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_user_roles() TO authenticated;
+-- Role lookup is performed by the server with the admin client. Keeping this
+-- helper private prevents exposing role enumeration through the browser RPC.
 
 CREATE OR REPLACE FUNCTION private.user_organization(p_user_id uuid)
 RETURNS uuid
