@@ -617,6 +617,95 @@ export type Database = {
         };
         Relationships: [];
       };
+      platform_audit_logs: {
+        Row: {
+          action: string;
+          auditable_id: string | null;
+          auditable_type: string;
+          created_at: string;
+          id: string;
+          new_values: Json | null;
+          old_values: Json | null;
+          actor_user_id: string;
+        };
+        Insert: {
+          action: string;
+          auditable_id?: string | null;
+          auditable_type: string;
+          created_at?: string;
+          id?: string;
+          new_values?: Json | null;
+          old_values?: Json | null;
+          actor_user_id: string;
+        };
+        Update: {
+          action?: string;
+          auditable_id?: string | null;
+          auditable_type?: string;
+          created_at?: string;
+          id?: string;
+          new_values?: Json | null;
+          old_values?: Json | null;
+          actor_user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_audit_logs_actor_user_id_fkey";
+            columns: ["actor_user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      platform_provisioning_requests: {
+        Row: {
+          actor_user_id: string;
+          created_at: string;
+          idempotency_key: string;
+          organization_id: string | null;
+          request_hash: string;
+          response: Json | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          actor_user_id: string;
+          created_at?: string;
+          idempotency_key: string;
+          organization_id?: string | null;
+          request_hash: string;
+          response?: Json | null;
+          status: string;
+          updated_at?: string;
+        };
+        Update: {
+          actor_user_id?: string;
+          created_at?: string;
+          idempotency_key?: string;
+          organization_id?: string | null;
+          request_hash?: string;
+          response?: Json | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_provisioning_requests_actor_user_id_fkey";
+            columns: ["actor_user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "platform_provisioning_requests_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       passkeys: {
         Row: {
           backed_up: boolean;

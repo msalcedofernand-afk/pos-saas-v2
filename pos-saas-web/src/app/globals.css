@@ -212,6 +212,19 @@ h1 { font-size: clamp(40px, 6vw, 72px); letter-spacing: -0.07em; line-height: 0.
 .payment-method label { align-items: center; color: var(--muted); display: flex; font-size: 11px; gap: 7px; }
 .payment-method select { padding: 7px; width: auto; }
 .settings-layout { display: grid; gap: 14px; grid-template-columns: 1fr .75fr; }
+.platform-intro { color: var(--muted); line-height: 1.6; max-width: 720px; }
+.platform-layout { display: grid; gap: 14px; grid-template-columns: minmax(360px, .85fr) minmax(0, 1.15fr); margin-top: 20px; }
+.platform-form { display: grid; gap: 14px; }
+.platform-form h2 { margin: 0; }
+.platform-form label { display: grid; font-size: 12px; font-weight: 700; gap: 7px; }
+.platform-form input { border: 1px solid var(--line); border-radius: 9px; font: inherit; padding: 10px 11px; width: 100%; }
+.platform-form .button { border: 0; cursor: pointer; justify-content: center; }
+.muted-copy { color: var(--muted); line-height: 1.5; margin: 0; }
+.form-success { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-size: 14px; padding: 12px; }
+.platform-organizations { display: grid; gap: 8px; margin-top: 18px; }
+.platform-organization { align-items: center; border-top: 1px solid var(--line); display: flex; justify-content: space-between; padding: 13px 0; }
+.platform-organization > div { display: grid; gap: 4px; }
+.platform-organization small { color: var(--muted); font-size: 11px; }
 .settings-users { display: grid; gap: 6px; margin-top: 16px; }
 .settings-user { align-items: center; background: transparent; border: 1px solid transparent; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; padding: 11px; text-align: left; }
 .settings-user:hover, .settings-user.selected { background: #eef2ff; border-color: #c7d2fe; }
@@ -366,7 +379,7 @@ h1 { font-size: clamp(40px, 6vw, 72px); letter-spacing: -0.07em; line-height: 0.
   .kitchen-sync { display: none; }
   .form-two-col { grid-template-columns: 1fr; }
   .module-page-heading { align-items: stretch; flex-direction: column; gap: 12px; }
-  .orders-layout, .settings-layout { grid-template-columns: 1fr; }
+  .orders-layout, .settings-layout, .platform-layout { grid-template-columns: 1fr; }
   .order-product-grid { grid-template-columns: repeat(2, 1fr); }
   .cash-header { align-items: stretch; grid-template-columns: 1fr; }
   .cash-close { flex-wrap: wrap; }

@@ -38,6 +38,16 @@ barra final, `AUTH_COOKIE_SECURE=true` y `AUTH_COOKIE_SAME_SITE=lax` para
 subdominios del mismo sitio. Usa `none` sólo cuando frontend y API sean
 realmente cross-site.
 
+Para habilitar el primer administrador global, configura
+`PLATFORM_ADMIN_EMAIL` con el correo exacto de una cuenta existente y haz que
+esa cuenta inicie sesión una vez. La promoción es de un solo uso: cuando ya
+existe un `platform_admin`, el correo configurado no puede promover otra
+cuenta.
+
+El alta de restaurantes envía una invitación de Supabase Auth; no se generan ni
+se almacenan contraseñas temporales. Configura SMTP/invitaciones en el proyecto
+Supabase de staging antes de probar el onboarding.
+
 La web sólo recibe `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL` y la zona
 horaria. Nunca configures variables `SUPABASE_*` en el frontend.
 

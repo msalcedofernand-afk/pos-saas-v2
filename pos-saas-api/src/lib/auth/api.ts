@@ -32,6 +32,56 @@ export async function getUserAccess(userId: string) {
   return profile as { id: string; is_blocked: boolean } | null;
 }
 
+export async function getGlobalUserRoles(userId: string) {
+  const { data, error } = await createAdminClient().from("user_roles").select("roles(name)").eq("user_id", userId);
+
+  if (error) throw error;
+  return ((data ?? []) as unknown as Array<{ roles: { name: string } | { name: string }[] | null }>)
+    .flatMap((row) => (Array.isArray(row.roles) ? row.roles : row.roles ? [row.roles] : []))
+    .map((role) => role.name)
+    .filter(Boolean);
+}
+
+/**
+ * One-time bootstrap for the first platform administrator.
+ * The email is server configuration, never client input. Once a platform
+ * administrator exists, this path cannot promote another account.
+ */
+export async function ensureConfiguredPlatformAdmin(userId: string, email?: string) {
+  const configuredEmail = process.env.PLATFORM_ADMIN_EMAIL?.trim().toLowerCase();
+  if (!configuredEmail || !email || email.trim().toLowerCase() !== configuredEmail) return false;
+
+  const db = createAdminClient();
+  const { data: platformRole, error: roleError } = await db
+    .from("roles")
+    .select("id")
+    .eq("name", "platform_admin")
+    .maybeSingle();
+  if (roleError) throw roleError;
+  if (!platformRole) return false;
+
+  const { count, error: countError } = await db
+    .from("user_roles")
+    .select("user_id", { count: "exact", head: true })
+    .eq("role_id", platformRole.id);
+  if (countError) throw countError;
+  if ((count ?? 0) > 0) return false;
+
+  const { error: insertError } = await db.from("user_roles").insert({ user_id: userId, role_id: platformRole.id });
+  if (insertError && insertError.code !== "23505") throw insertError;
+  if (!insertError) {
+    const { error: auditError } = await db.from("platform_audit_logs").insert({
+      actor_user_id: userId,
+      action: "platform_admin_bootstrap",
+      auditable_type: "users",
+      auditable_id: userId,
+      new_values: { role: "platform_admin", source: "PLATFORM_ADMIN_EMAIL" },
+    });
+    if (auditError) throw auditError;
+  }
+  return true;
+}
+
 export async function getUserMembership(userId: string, requestedOrganizationId?: string) {
   const adminClient = createAdminClient();
   let query = adminClient
@@ -147,14 +197,34 @@ export async function authenticateApiRequest(request: Request, allowedRoles?: re
     return { user: null, response: apiError("Organización inválida", 400) } as const;
   }
 
-  const membership = await getUserMembership(user.id, requestedOrganizationId);
-  if (!membership) {
-    return { user: null, response: apiError("Usuario sin organización asignada", 403) } as const;
+  const globalRoles = await getGlobalUserRoles(user.id);
+  let membership = await getUserMembership(user.id, requestedOrganizationId);
+  const isPlatformAdmin = globalRoles.includes("platform_admin");
+
+  if (!membership && isPlatformAdmin) {
+    const db = createAdminClient();
+    let organizationQuery = db
+      .from("organizations")
+      .select("id")
+      .eq("is_active", true)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    if (requestedOrganizationId) organizationQuery = organizationQuery.eq("id", requestedOrganizationId);
+    const { data: organization, error: organizationError } = await organizationQuery.maybeSingle();
+    if (organizationError) throw organizationError;
+    if (organization) membership = { organizationId: organization.id, roles: [] };
   }
 
-  const roles = membership.roles;
+  if (!membership && !isPlatformAdmin) {
+    return { user: null, response: apiError("Usuario sin organización asignada", 403) } as const;
+  }
+  if (!membership) {
+    return { user: null, response: apiError("No hay una organización activa disponible", 503) } as const;
+  }
 
-  if (allowedRoles && !roles.some((role) => allowedRoles.includes(role))) {
+  const roles = [...new Set([...globalRoles, ...(membership?.roles ?? [])])];
+
+  if (allowedRoles && !roles.some((role) => allowedRoles.includes(role) || role === "platform_admin")) {
     return { user: null, response: apiError("Permisos insuficientes", 403) } as const;
   }
 

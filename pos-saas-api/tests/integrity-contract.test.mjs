@@ -12,6 +12,15 @@ const paymentMigrationUrl = new URL(
 );
 const orderRouteUrl = new URL("../src/app/api/v1/orders/[id]/status/route.ts", import.meta.url);
 const kitchenRouteUrl = new URL("../src/app/api/v1/kitchen/orders/[id]/status/route.ts", import.meta.url);
+const platformMigrationUrl = new URL(
+  "../../pos-saas-infra/supabase/migrations/20260921214645_platform_administration.sql",
+  import.meta.url,
+);
+const platformSecurityMigrationUrl = new URL(
+  "../../pos-saas-infra/supabase/migrations/20260921215701_platform_provisioning_security.sql",
+  import.meta.url,
+);
+const platformRouteUrl = new URL("../src/app/api/v1/platform/organizations/route.ts", import.meta.url);
 
 test("la migración conserva las invariantes críticas de pedidos y caja", async () => {
   const migration = await readFile(migrationUrl, "utf8");
@@ -46,4 +55,21 @@ test("las rutas de estados no realizan escrituras parciales", async () => {
   assert.match(kitchenRoute, /rpc\("transition_kitchen_order_transaction"/);
   assert.doesNotMatch(orderRoute, /\.from\("order_items"\)/);
   assert.doesNotMatch(kitchenRoute, /\.from\("order_items"\)/);
+});
+
+test("el alta global permanece separada del admin de una organización", async () => {
+  const [platformMigration, platformSecurityMigration, platformRoute] = await Promise.all([
+    readFile(platformMigrationUrl, "utf8"),
+    readFile(platformSecurityMigrationUrl, "utf8"),
+    readFile(platformRouteUrl, "utf8"),
+  ]);
+
+  assert.match(platformMigration, /platform_admin/);
+  assert.match(platformSecurityMigration, /platform_audit_logs/);
+  assert.match(platformSecurityMigration, /platform_provisioning_requests/);
+  assert.match(platformSecurityMigration, /REVOKE ALL ON TABLE public\.platform_audit_logs FROM anon, authenticated/);
+  assert.match(platformRoute, /authenticateApiRequest\(request, \["platform_admin"\]\)/g);
+  assert.match(platformRoute, /inviteUserByEmail/);
+  assert.match(platformRoute, /idempotency-key/);
+  assert.doesNotMatch(platformRoute, /adminPassword/);
 });

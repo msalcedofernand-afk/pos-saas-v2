@@ -24,7 +24,10 @@ export async function proxy(request: NextRequest) {
       response.headers.set("Access-Control-Allow-Origin", origin);
       response.headers.set("Access-Control-Allow-Credentials", "true");
       response.headers.set("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
-      response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-CSRF-Token");
+      response.headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, X-CSRF-Token, Idempotency-Key",
+      );
     }
     addVaryOrigin(response);
     return response;

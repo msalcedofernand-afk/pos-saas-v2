@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { getUserAccess, getUserMembership } from "@/lib/auth/api";
+import { ensureConfiguredPlatformAdmin, getGlobalUserRoles, getUserAccess, getUserMembership } from "@/lib/auth/api";
 import { apiError, handleApiError } from "@/lib/api/response";
 import { checkLoginSecurity, recordLoginFailure, resetLoginSecurity } from "@/lib/auth/login-security";
 import { getOrCreateCsrfToken, setCsrfCookie } from "@/lib/security/csrf";
@@ -45,8 +45,10 @@ export async function POST(request: NextRequest) {
       return apiError("Usuario bloqueado o sin perfil operativo", 403);
     }
 
+    await ensureConfiguredPlatformAdmin(data.user.id, data.user.email);
+    const globalRoles = await getGlobalUserRoles(data.user.id);
     const membership = await getUserMembership(data.user.id);
-    if (!membership) {
+    if (!membership && !globalRoles.includes("platform_admin")) {
       await supabase.auth.signOut();
       return apiError("Usuario sin organización asignada", 403);
     }
@@ -54,8 +56,8 @@ export async function POST(request: NextRequest) {
     const csrfToken = getOrCreateCsrfToken(request);
     const response = NextResponse.json({
       data: {
-        user: { id: data.user.id, email: data.user.email, organizationId: membership.organizationId },
-        roles: membership.roles,
+        user: { id: data.user.id, email: data.user.email, organizationId: membership?.organizationId ?? null },
+        roles: [...new Set([...globalRoles, ...(membership?.roles ?? [])])],
         csrfToken,
       },
     });

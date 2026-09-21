@@ -19,6 +19,7 @@ Proyecto separado para construir la API central del POS. La interfaz administrat
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`
 - `GET /api/v1/organizations`
+- `GET|POST /api/v1/platform/organizations` (sólo `platform_admin`)
 - `GET|POST /api/v1/products`
 - `PATCH|DELETE /api/v1/products/:id`
 - `GET|POST /api/v1/categories`
@@ -37,7 +38,7 @@ aislamiento entre organizaciones en staging.
 
 ## Variables de entorno
 
-Copiar `.env.example` a `.env.local`. `SUPABASE_SECRET_KEY` es un secreto de servidor y nunca debe llegar al frontend. La API acepta `SUPABASE_SERVICE_ROLE_KEY` sólo como compatibilidad legacy.
+Copiar `.env.example` a `.env.local`. `SUPABASE_SECRET_KEY` es un secreto de servidor y nunca debe llegar al frontend. La API acepta `SUPABASE_SERVICE_ROLE_KEY` sólo como compatibilidad legacy. `PLATFORM_ADMIN_EMAIL` permite promover de forma controlada la primera cuenta global al iniciar sesión. El endpoint de plataforma envía invitaciones por correo en lugar de aceptar contraseñas temporales.
 
 ## Qué quedó fuera de esta carpeta
 

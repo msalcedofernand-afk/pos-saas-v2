@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api/client";
 
-export type DashboardUser = { email?: string; roles: string[]; organizationId: string };
+export type DashboardUser = { email?: string; roles: string[]; organizationId: string | null };
 export type MetricState = "loading" | "ok" | "forbidden" | "error";
 export type DashboardMetrics = {
   sales: number | null;
@@ -75,6 +75,11 @@ export function useDashboardMetrics() {
         if (!active) return;
         const user = currentSession.data.user;
         setSession(user);
+
+        if (user.roles.includes("platform_admin")) {
+          router.replace("/dashboard/platform");
+          return;
+        }
 
         const roles = user.roles;
         const canCatalog = roles.some((role) => ["admin", "cashier", "staff"].includes(role));
