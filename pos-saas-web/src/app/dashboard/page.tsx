@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch, setActiveOrganizationId } from "@/lib/api/client";
 import { brand } from "@/config/brand";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 
@@ -67,6 +68,27 @@ function displayMetric<T>(
 export default function DashboardPage() {
   const router = useRouter();
   const { session, metrics, metricStates, metricsWarning, error } = useDashboardMetrics();
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string }>>([]);
+
+  useEffect(() => {
+    let active = true;
+    void apiFetch<{
+      data: Array<{ id: string; name: string; slug: string; isDefault: boolean }>;
+      activeOrganizationId: string;
+    }>("/api/v1/organizations").then((response) => {
+      if (!active) return;
+      setOrganizations(response.data);
+      setActiveOrganizationId(response.activeOrganizationId);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  function switchOrganization(organizationId: string) {
+    setActiveOrganizationId(organizationId);
+    window.location.reload();
+  }
 
   async function logout() {
     await apiFetch("/api/v1/auth/logout", { method: "POST" });
@@ -126,6 +148,22 @@ export default function DashboardPage() {
           {brand.name}
         </Link>
         <div className="dashboard-account">
+          {organizations.length > 1 && (
+            <label>
+              <span className="sr-only">Organización activa</span>
+              <select
+                aria-label="Organización activa"
+                defaultValue={organizations.find((organization) => organization.id === session?.organizationId)?.id}
+                onChange={(event) => switchOrganization(event.target.value)}
+              >
+                {organizations.map((organization) => (
+                  <option key={organization.id} value={organization.id}>
+                    {organization.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <span>{session?.email ?? "Cargando..."}</span>
           <button className="button button-small" onClick={logout} type="button">
             Salir

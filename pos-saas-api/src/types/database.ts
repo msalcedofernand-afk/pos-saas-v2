@@ -1384,6 +1384,10 @@ export type Database = {
         Args: { p_end: string; p_organization_id: string; p_start: string };
         Returns: Json;
       };
+      get_dashboard_metrics: {
+        Args: { p_end: string; p_organization_id: string; p_start: string };
+        Returns: Json;
+      };
       get_user_roles: { Args: never; Returns: string[] };
       has_role: { Args: { role_name: string }; Returns: boolean };
       open_cash_shift_idempotent: {

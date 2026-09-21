@@ -8,7 +8,7 @@ export function createSupabaseProductRepository(organizationId: string): Product
 
   return {
     async list({ search, categoryId, available, page, limit }) {
-      let query = (db as any).from("products").select("*, categories(name)", { count: "exact" });
+      let query = db.from("products").select("*, categories(name)", { count: "exact" });
       query = query.eq("organization_id", organizationId);
 
       const safeSearch = search?.replace(/[\\%_,()]/g, " ").trim();
@@ -24,7 +24,7 @@ export function createSupabaseProductRepository(organizationId: string): Product
     },
 
     async create(input: ProductInput) {
-      const { data, error } = await (db as any)
+      const { data, error } = await db
         .from("products")
         .insert({ ...input, organization_id: organizationId })
         .select("*, categories(name)")
@@ -34,7 +34,7 @@ export function createSupabaseProductRepository(organizationId: string): Product
     },
 
     async update(id: string, input: Partial<ProductInput>) {
-      const { data, error } = await (db as any)
+      const { data, error } = await db
         .from("products")
         .update({ ...input, updated_at: new Date().toISOString() })
         .eq("id", id)
@@ -46,7 +46,7 @@ export function createSupabaseProductRepository(organizationId: string): Product
     },
 
     async remove(id: string) {
-      const { error } = await (db as any).from("products").delete().eq("id", id).eq("organization_id", organizationId);
+      const { error } = await db.from("products").delete().eq("id", id).eq("organization_id", organizationId);
       if (error) throw error;
     },
   };

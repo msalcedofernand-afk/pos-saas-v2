@@ -9,7 +9,7 @@ export function createSupabaseCategoryRepository(organizationId: string): Catego
 
   return {
     async list() {
-      const { data, error } = await (db as any)
+      const { data, error } = await db
         .from("categories")
         .select("*")
         .eq("organization_id", organizationId)
@@ -21,7 +21,7 @@ export function createSupabaseCategoryRepository(organizationId: string): Catego
     },
 
     async create(input: CategoryInput) {
-      const { data, error } = await (db as any)
+      const { data, error } = await db
         .from("categories")
         .insert({ ...input, organization_id: organizationId })
         .select("*")
@@ -32,7 +32,7 @@ export function createSupabaseCategoryRepository(organizationId: string): Catego
     },
 
     async remove(id: string) {
-      const { count, error: countError } = await (db as any)
+      const { count, error: countError } = await db
         .from("products")
         .select("id", { count: "exact", head: true })
         .eq("organization_id", organizationId)
@@ -41,7 +41,7 @@ export function createSupabaseCategoryRepository(organizationId: string): Catego
       if (countError) throw countError;
       if ((count ?? 0) > 0) throw new CategoryInUseError();
 
-      const { data, error } = await (db as any)
+      const { data, error } = await db
         .from("categories")
         .delete()
         .eq("id", id)

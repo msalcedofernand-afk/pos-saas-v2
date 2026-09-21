@@ -1,10 +1,19 @@
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
 let csrfToken: string | null = null;
+let activeOrganizationId: string | null = null;
 
 const mutatingMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export function createIdempotencyKey(): string {
   return crypto.randomUUID();
+}
+
+export function setActiveOrganizationId(organizationId: string | null) {
+  activeOrganizationId = organizationId;
+}
+
+export function getActiveOrganizationId() {
+  return activeOrganizationId;
 }
 
 async function getCsrfToken() {
@@ -26,6 +35,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   const method = (init?.method ?? "GET").toUpperCase();
   const headers = new Headers(init?.headers);
   headers.set("Content-Type", "application/json");
+  if (activeOrganizationId) headers.set("X-Organization-Id", activeOrganizationId);
   if (mutatingMethods.has(method) && !path.endsWith("/auth/login")) {
     headers.set("X-CSRF-Token", await getCsrfToken());
   }

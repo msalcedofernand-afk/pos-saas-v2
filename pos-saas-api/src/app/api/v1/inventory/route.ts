@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await authenticateApiRequest(request, ["admin", "staff", "kitchen"]);
     if (auth.response) return auth.response;
-    const { data, error } = await (createAdminClient() as any)
+    const { data, error } = await createAdminClient()
       .from("inventory_items")
       .select(
         "id, name, unit, current_stock, minimum_stock, cost_per_unit, inventory_categories(name), suppliers(name)",

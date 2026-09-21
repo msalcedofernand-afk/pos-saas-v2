@@ -34,6 +34,7 @@ export async function proxy(request: NextRequest) {
     isApiRoute &&
     isProtectedMethod(request.method) &&
     !isCsrfExemptPath(request.nextUrl.pathname) &&
+    !/^Bearer\s+\S+$/i.test(request.headers.get("authorization") ?? "") &&
     !hasValidCsrfToken(request)
   ) {
     const response = NextResponse.json(

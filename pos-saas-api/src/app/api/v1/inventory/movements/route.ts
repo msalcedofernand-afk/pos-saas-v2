@@ -17,14 +17,14 @@ export async function POST(request: NextRequest) {
     const auth = await authenticateApiRequest(request, ["admin", "staff"]);
     if (auth.response) return auth.response;
     const body = bodySchema.parse(await request.json());
-    const db = createAdminClient() as any;
+    const db = createAdminClient();
     const { data, error } = await db.rpc("register_inventory_movement", {
       p_inventory_item_id: body.inventoryItemId,
       p_user_id: auth.user.id,
       p_type: body.type,
       p_quantity: body.quantity,
       p_unit_cost: body.unitCost,
-      p_description: body.description ?? null,
+      p_description: body.description ?? "",
     });
     if (error) return rpcApiError(error, "No se pudo registrar el movimiento");
     const item = Array.isArray(data) ? data[0] : data;

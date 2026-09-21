@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api/client";
-import { businessDate } from "@/lib/date/business-date";
 
-export type DashboardUser = { email?: string; roles: string[] };
+export type DashboardUser = { email?: string; roles: string[]; organizationId: string };
 export type MetricState = "loading" | "ok" | "forbidden" | "error";
 export type DashboardMetrics = {
   sales: number | null;
@@ -20,13 +19,7 @@ export type DashboardMetrics = {
 export type DashboardMetricKey = keyof DashboardMetrics;
 
 type MetricResult<T> = { data: T | null; state: MetricState };
-type ProductResponse = { data: { id: string }[]; meta?: { total?: number } };
-type CategoryResponse = { data: { id: string }[] };
-type OrderResponse = { data: { status: string }[] };
-type KitchenResponse = { data: { id: string }[] };
-type CashResponse = { data: { shift: { id: string } | null } };
-type ReportResponse = { data: { sales: number; paidOrders: number } };
-type InventoryResponse = { data: { current_stock: number; minimum_stock: number }[] };
+type DashboardResponse = { data: DashboardMetrics & { paidOrders: number | null } };
 
 const emptyMetrics: DashboardMetrics = {
   sales: null,
@@ -59,10 +52,6 @@ async function fetchMetric<T>(path: string): Promise<MetricResult<T>> {
   }
 }
 
-function forbiddenMetric<T>(): MetricResult<T> {
-  return { data: null, state: "forbidden" };
-}
-
 export function useDashboardMetrics() {
   const router = useRouter();
   const [session, setSession] = useState<DashboardUser | null>(null);
@@ -87,55 +76,33 @@ export function useDashboardMetrics() {
         const canCash = roles.some((role) => ["admin", "cashier"].includes(role));
         const canOrders = roles.some((role) => ["admin", "cashier", "waiter", "kitchen", "staff"].includes(role));
 
-        const [products, categories, orders, kitchenOrders, cash, report, inventory] = await Promise.all([
-          canCatalog
-            ? fetchMetric<ProductResponse>("/api/v1/products?limit=1")
-            : Promise.resolve(forbiddenMetric<ProductResponse>()),
-          canCatalog
-            ? fetchMetric<CategoryResponse>("/api/v1/categories")
-            : Promise.resolve(forbiddenMetric<CategoryResponse>()),
-          canOrders ? fetchMetric<OrderResponse>("/api/v1/orders") : Promise.resolve(forbiddenMetric<OrderResponse>()),
-          canKitchen
-            ? fetchMetric<KitchenResponse>("/api/v1/kitchen/orders")
-            : Promise.resolve(forbiddenMetric<KitchenResponse>()),
-          canCash
-            ? fetchMetric<CashResponse>("/api/v1/cash/summary")
-            : Promise.resolve(forbiddenMetric<CashResponse>()),
-          canCash
-            ? fetchMetric<ReportResponse>(`/api/v1/reports/summary?date=${businessDate()}`)
-            : Promise.resolve(forbiddenMetric<ReportResponse>()),
-          canKitchen
-            ? fetchMetric<InventoryResponse>("/api/v1/inventory")
-            : Promise.resolve(forbiddenMetric<InventoryResponse>()),
-        ]);
+        const dashboard = await fetchMetric<DashboardResponse>("/api/v1/dashboard/metrics");
 
         if (!active) return;
-        const activeStatuses = new Set(["pending", "confirmed", "preparing", "ready"]);
-        const activeOrders = orders.data?.data.filter((order) => activeStatuses.has(order.status)).length ?? null;
-        const paidOrders = report.data?.data.paidOrders ?? 0;
         const states: Record<DashboardMetricKey, MetricState> = {
-          sales: report.state,
-          activeOrders: orders.state,
-          kitchenOrders: kitchenOrders.state,
-          cashOpen: cash.state,
-          lowStock: inventory.state,
-          averageTicket: report.state,
-          productCount: products.state,
-          categoryCount: categories.state,
+          sales: canCash ? dashboard.state : "forbidden",
+          activeOrders: canOrders ? dashboard.state : "forbidden",
+          kitchenOrders: canKitchen ? dashboard.state : "forbidden",
+          cashOpen: canCash ? dashboard.state : "forbidden",
+          lowStock: canKitchen ? dashboard.state : "forbidden",
+          averageTicket: canCash ? dashboard.state : "forbidden",
+          productCount: canCatalog ? dashboard.state : "forbidden",
+          categoryCount: canCatalog ? dashboard.state : "forbidden",
         };
         setMetricStates(states);
-        setMetricsWarning(Object.values(states).some((state) => state === "error"));
+        setMetricsWarning(dashboard.state === "error");
+        const values = dashboard.data?.data;
+        const paidOrders = values?.paidOrders ?? 0;
+        const sales = values?.sales ?? null;
         setMetrics({
-          sales: report.data?.data.sales ?? null,
-          activeOrders,
-          kitchenOrders: kitchenOrders.data?.data.length ?? null,
-          cashOpen: cash.data ? Boolean(cash.data.data.shift) : null,
-          lowStock:
-            inventory.data?.data.filter((item) => Number(item.current_stock) <= Number(item.minimum_stock)).length ??
-            null,
-          averageTicket: report.data && paidOrders > 0 ? report.data.data.sales / paidOrders : report.data ? 0 : null,
-          productCount: products.data?.meta?.total ?? products.data?.data.length ?? null,
-          categoryCount: categories.data?.data.length ?? null,
+          sales,
+          activeOrders: values?.activeOrders ?? null,
+          kitchenOrders: values?.kitchenOrders ?? null,
+          cashOpen: values?.cashOpen ?? null,
+          lowStock: values?.lowStock ?? null,
+          averageTicket: sales !== null && paidOrders > 0 ? sales / paidOrders : values ? 0 : null,
+          productCount: values?.productCount ?? null,
+          categoryCount: values?.categoryCount ?? null,
         });
       } catch (cause) {
         if (!active) return;

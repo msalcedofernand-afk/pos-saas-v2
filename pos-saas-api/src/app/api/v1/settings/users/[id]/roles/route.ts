@@ -13,7 +13,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (auth.response) return auth.response;
     const userId = idSchema.parse((await params).id);
     const body = bodySchema.parse(await request.json());
-    const db = createAdminClient() as any;
+    const db = createAdminClient();
     const { data, error } = await db.rpc("update_organization_member_roles_transaction", {
       p_actor_user_id: auth.user.id,
       p_target_user_id: userId,

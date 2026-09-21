@@ -20,12 +20,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.status === "cancelled" && !body.reason) {
       return apiError("Debe indicar el motivo de rechazo o cancelación", 400);
     }
-    const supabase = createAdminClient() as any;
+    const supabase = createAdminClient();
     const { data, error } = await supabase.rpc("transition_kitchen_order_transaction", {
       p_order_id: orderId,
       p_user_id: auth.user.id,
       p_status: body.status,
-      p_reason: body.reason ?? null,
+      p_reason: body.reason,
     });
     if (error) {
       return rpcApiError(error, "No se pudo actualizar el pedido de cocina");
