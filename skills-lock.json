@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "replit-ui-skills": {
+      "source": "ihlamury/design-skills",
+      "sourceType": "github",
+      "skillPath": "skills/replit/SKILL.md",
+      "computedHash": "40b53b58165f0575eca27e8024cd9626f2ce1e115bd0ef7790fa1551eecb381e"
+    }
+  }
+}

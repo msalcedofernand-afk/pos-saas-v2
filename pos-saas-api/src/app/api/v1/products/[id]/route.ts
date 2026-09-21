@@ -21,7 +21,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const id = idSchema.parse((await params).id);
     const body = updateSchema.parse(await request.json());
-    const repository = createSupabaseProductRepository();
+    const repository = createSupabaseProductRepository(auth.user.organizationId);
     const product = await repository.update(id, {
       category_id: body.categoryId,
       name: body.name,
@@ -44,7 +44,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     if (auth.response) return auth.response;
 
     const id = idSchema.parse((await params).id);
-    const repository = createSupabaseProductRepository();
+    const repository = createSupabaseProductRepository(auth.user.organizationId);
     await repository.remove(id);
     return NextResponse.json({ success: true });
   } catch (error) {

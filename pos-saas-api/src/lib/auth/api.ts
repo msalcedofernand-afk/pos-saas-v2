@@ -9,6 +9,7 @@ import type { Database } from "@/types/database";
 export interface ApiUser {
   id: string;
   email: string | undefined;
+  organizationId: string;
   roles: string[];
 }
 
@@ -24,18 +25,31 @@ export async function getUserAccess(userId: string) {
   return profile as { id: string; is_blocked: boolean } | null;
 }
 
-export async function getUserRoles(userId: string) {
+export async function getUserMembership(userId: string) {
   const adminClient = createAdminClient();
-  const { data: roleRows, error: roleError } = await (adminClient as any)
-    .from("user_roles")
-    .select("roles(name)")
-    .eq("user_id", userId);
+  const { data: membershipRows, error: membershipError } = await (adminClient as any)
+    .from("organization_members")
+    .select("organization_id, roles(name), organizations!inner(is_active), is_default, created_at")
+    .eq("user_id", userId)
+    .eq("organizations.is_active", true)
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: true });
 
-  if (roleError) throw roleError;
+  if (membershipError) throw membershipError;
+  const organizationId = membershipRows?.[0]?.organization_id as string | undefined;
+  if (!organizationId) return null;
 
-  return (roleRows ?? [])
+  const roles = (membershipRows ?? [])
+    .filter((row: any) => row.organization_id === organizationId)
     .map((row: any) => row.roles?.name)
     .filter(Boolean) as string[];
+
+  return { organizationId, roles };
+}
+
+export async function getUserRoles(userId: string) {
+  const membership = await getUserMembership(userId);
+  return membership?.roles ?? [];
 }
 
 export async function authenticateApiRequest(request: Request, allowedRoles?: readonly string[]) {
@@ -86,14 +100,19 @@ export async function authenticateApiRequest(request: Request, allowedRoles?: re
     return { user: null, response: apiError("Usuario bloqueado o sin perfil operativo", 403) } as const;
   }
 
-  const roles = await getUserRoles(user.id);
+  const membership = await getUserMembership(user.id);
+  if (!membership) {
+    return { user: null, response: apiError("Usuario sin organización asignada", 403) } as const;
+  }
+
+  const roles = membership.roles;
 
   if (allowedRoles && !roles.some((role) => allowedRoles.includes(role))) {
     return { user: null, response: apiError("Permisos insuficientes", 403) } as const;
   }
 
   return {
-    user: { id: user.id, email: user.email, roles } satisfies ApiUser,
+    user: { id: user.id, email: user.email, organizationId: membership.organizationId, roles } satisfies ApiUser,
     response: null,
   } as const;
 }

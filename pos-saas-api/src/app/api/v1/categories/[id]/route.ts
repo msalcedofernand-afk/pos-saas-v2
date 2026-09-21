@@ -13,7 +13,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     if (auth.response) return auth.response;
 
     const id = idSchema.parse((await params).id);
-    await createSupabaseCategoryRepository().remove(id);
+    await createSupabaseCategoryRepository(auth.user.organizationId).remove(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof CategoryInUseError) return apiError(error.message, 409, { code: error.code });

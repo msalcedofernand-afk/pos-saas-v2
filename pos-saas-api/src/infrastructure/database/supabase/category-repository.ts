@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { CategoryInUseError } from "@/domain/catalog/category-repository";
 import type { CategoryInput, CategoryRecord, CategoryRepository } from "@/domain/catalog/category-repository";
 
-export function createSupabaseCategoryRepository(): CategoryRepository {
+export function createSupabaseCategoryRepository(organizationId: string): CategoryRepository {
   const db = createAdminClient();
 
   return {
@@ -12,6 +12,7 @@ export function createSupabaseCategoryRepository(): CategoryRepository {
       const { data, error } = await (db as any)
         .from("categories")
         .select("*")
+        .eq("organization_id", organizationId)
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true });
 
@@ -22,7 +23,7 @@ export function createSupabaseCategoryRepository(): CategoryRepository {
     async create(input: CategoryInput) {
       const { data, error } = await (db as any)
         .from("categories")
-        .insert(input)
+        .insert({ ...input, organization_id: organizationId })
         .select("*")
         .single();
 
@@ -34,6 +35,7 @@ export function createSupabaseCategoryRepository(): CategoryRepository {
       const { count, error: countError } = await (db as any)
         .from("products")
         .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId)
         .eq("category_id", id);
 
       if (countError) throw countError;
@@ -43,6 +45,7 @@ export function createSupabaseCategoryRepository(): CategoryRepository {
         .from("categories")
         .delete()
         .eq("id", id)
+        .eq("organization_id", organizationId)
         .select("id")
         .maybeSingle();
 

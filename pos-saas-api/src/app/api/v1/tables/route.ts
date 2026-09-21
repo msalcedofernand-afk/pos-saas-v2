@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await (createAdminClient() as any)
       .from("tables_restaurant")
       .select("id, name, capacity, status")
+      .eq("organization_id", auth.user.organizationId)
       .order("name", { ascending: true });
     if (error) throw error;
     return NextResponse.json({ data: data ?? [] });

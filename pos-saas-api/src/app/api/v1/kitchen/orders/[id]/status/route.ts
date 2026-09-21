@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
-import { apiError, handleApiError } from "@/lib/api/response";
+import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const idSchema = z.string().uuid();
@@ -31,8 +31,7 @@ export async function PATCH(
       p_reason: body.reason ?? null,
     });
     if (error) {
-      const message = error.message ?? "No se pudo actualizar el pedido de cocina";
-      return apiError(message, message.includes("no encontrado") ? 404 : 409);
+      return rpcApiError(error, "No se pudo actualizar el pedido de cocina");
     }
     const updatedOrder = Array.isArray(data) ? data[0] : data;
     if (!updatedOrder) return apiError("No se pudo actualizar el pedido de cocina", 500);

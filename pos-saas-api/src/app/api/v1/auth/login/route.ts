@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { getUserAccess, getUserRoles } from "@/lib/auth/api";
+import { getUserAccess, getUserMembership } from "@/lib/auth/api";
 import { apiError, handleApiError } from "@/lib/api/response";
 
 export const dynamic = "force-dynamic";
@@ -30,11 +30,15 @@ export async function POST(request: NextRequest) {
       return apiError("Usuario bloqueado o sin perfil operativo", 403);
     }
 
-    const roles = await getUserRoles(data.user.id);
+    const membership = await getUserMembership(data.user.id);
+    if (!membership) {
+      await supabase.auth.signOut();
+      return apiError("Usuario sin organización asignada", 403);
+    }
     return NextResponse.json({
       data: {
-        user: { id: data.user.id, email: data.user.email },
-        roles,
+        user: { id: data.user.id, email: data.user.email, organizationId: membership.organizationId },
+        roles: membership.roles,
       },
     });
   } catch (error) {

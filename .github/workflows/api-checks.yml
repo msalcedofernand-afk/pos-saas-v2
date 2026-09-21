@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: api-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   api:
     runs-on: ubuntu-latest
@@ -19,6 +26,7 @@ jobs:
           cache: npm
           cache-dependency-path: pos-saas-api/package-lock.json
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run build
       - run: npm run typecheck
       - run: npm test
@@ -34,6 +42,8 @@ jobs:
           cache: npm
           cache-dependency-path: pos-saas-infra/package-lock.json
       - run: npm ci
+        working-directory: pos-saas-infra
+      - run: npm audit --omit=dev --audit-level=high
         working-directory: pos-saas-infra
       - run: node scripts/validate-migrations.mjs
         working-directory: pos-saas-infra

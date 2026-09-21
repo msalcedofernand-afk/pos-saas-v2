@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await (supabase as any)
       .from("orders")
       .select("status, total_amount")
+      .eq("organization_id", auth.user.organizationId)
       .gte("created_at", start.toISOString())
       .lt("created_at", end.toISOString());
 

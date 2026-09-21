@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
-import { apiError, handleApiError } from "@/lib/api/response";
+import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const bodySchema = z.object({
@@ -24,8 +24,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       p_reason: body.reason ?? null,
     });
     if (error) {
-      const message = error.message ?? "No se pudo actualizar el pedido";
-      return apiError(message, message.includes("no encontrado") ? 404 : 409);
+      return rpcApiError(error, "No se pudo actualizar el pedido");
     }
     const order = Array.isArray(data) ? data[0] : data;
     if (!order) return apiError("No se pudo actualizar el pedido", 500);

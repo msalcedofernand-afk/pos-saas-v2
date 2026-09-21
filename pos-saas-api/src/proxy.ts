@@ -18,6 +18,7 @@ export async function proxy(request: NextRequest) {
 
   if (isApiRoute && request.method === "OPTIONS") {
     const response = new NextResponse(null, { status: 204 });
+    response.headers.set("Cache-Control", "no-store");
     if (origin === allowedOrigin) {
       response.headers.set("Access-Control-Allow-Origin", origin);
       response.headers.set("Access-Control-Allow-Credentials", "true");
@@ -30,6 +31,7 @@ export async function proxy(request: NextRequest) {
 
   const response = await updateSession(request);
   if (isApiRoute) {
+    response.headers.set("Cache-Control", "no-store");
     addVaryOrigin(response);
     if (origin === allowedOrigin) {
       response.headers.set("Access-Control-Allow-Origin", origin);

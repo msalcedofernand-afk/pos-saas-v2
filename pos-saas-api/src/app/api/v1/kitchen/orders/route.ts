@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
           )
         )
       `)
+      .eq("organization_id", auth.user.organizationId)
       .in("status", activeStatuses)
       .order("created_at", { ascending: true });
 

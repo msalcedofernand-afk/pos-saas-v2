@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
-import { apiError, handleApiError } from "@/lib/api/response";
+import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const bodySchema = z.object({
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       p_received_amount: body.receivedAmount ?? body.amount,
       p_reference: body.reference ?? null,
     });
-    if (error) return apiError(error.message ?? "No se pudo registrar el pago", 409);
+    if (error) return rpcApiError(error, "No se pudo registrar el pago");
     const payment = Array.isArray(data) ? data[0] : data;
     if (!payment) return apiError("No se pudo registrar el pago", 500);
     return NextResponse.json({ data: payment }, { status: 201 });

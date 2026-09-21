@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
-import { apiError, handleApiError } from "@/lib/api/response";
+import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const bodySchema = z.object({ inventoryItemId: z.string().uuid(), type: z.enum(["in", "out", "adjustment"]), quantity: z.number().finite().positive(), unitCost: z.number().finite().min(0).default(0), description: z.string().trim().max(300).optional() });
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       p_unit_cost: body.unitCost,
       p_description: body.description ?? null,
     });
-    if (error) return apiError(error.message ?? "No se pudo registrar el movimiento", 409);
+    if (error) return rpcApiError(error, "No se pudo registrar el movimiento");
     const item = Array.isArray(data) ? data[0] : data;
     if (!item) return apiError("No se pudo registrar el movimiento", 500);
     return NextResponse.json({ data: item }, { status: 201 });

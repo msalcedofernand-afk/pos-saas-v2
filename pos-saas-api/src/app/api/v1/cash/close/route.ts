@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
-import { apiError, handleApiError } from "@/lib/api/response";
+import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const bodySchema = z.object({
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       p_closing_amount: body.closingAmount,
       p_difference_reason: body.differenceReason ?? null,
     });
-    if (error) return apiError(error.message ?? "No se pudo cerrar caja", 409);
+    if (error) return rpcApiError(error, "No se pudo cerrar caja");
     const shift = Array.isArray(data) ? data[0] : data;
     if (!shift) return apiError("No se pudo cerrar caja", 500);
     return NextResponse.json({ data: shift });

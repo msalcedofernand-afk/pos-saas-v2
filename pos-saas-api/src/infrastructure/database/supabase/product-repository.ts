@@ -3,7 +3,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ProductInput, ProductRecord, ProductRepository } from "@/domain/catalog/product-repository";
 
-export function createSupabaseProductRepository(): ProductRepository {
+export function createSupabaseProductRepository(organizationId: string): ProductRepository {
   const db = createAdminClient();
 
   return {
@@ -11,6 +11,7 @@ export function createSupabaseProductRepository(): ProductRepository {
       let query = (db as any)
         .from("products")
         .select("*, categories(name)", { count: "exact" });
+      query = query.eq("organization_id", organizationId);
 
       const safeSearch = search?.replace(/[\\%_,()]/g, " ").trim();
       if (safeSearch) query = query.or(`name.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`);
@@ -29,7 +30,7 @@ export function createSupabaseProductRepository(): ProductRepository {
     async create(input: ProductInput) {
       const { data, error } = await (db as any)
         .from("products")
-        .insert(input)
+        .insert({ ...input, organization_id: organizationId })
         .select("*, categories(name)")
         .single();
       if (error) throw error;
@@ -41,6 +42,7 @@ export function createSupabaseProductRepository(): ProductRepository {
         .from("products")
         .update({ ...input, updated_at: new Date().toISOString() })
         .eq("id", id)
+        .eq("organization_id", organizationId)
         .select("*, categories(name)")
         .single();
       if (error) throw error;
@@ -48,7 +50,7 @@ export function createSupabaseProductRepository(): ProductRepository {
     },
 
     async remove(id: string) {
-      const { error } = await (db as any).from("products").delete().eq("id", id);
+      const { error } = await (db as any).from("products").delete().eq("id", id).eq("organization_id", organizationId);
       if (error) throw error;
     },
   };

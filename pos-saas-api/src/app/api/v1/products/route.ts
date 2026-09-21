@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     if (auth.response) return auth.response;
 
     const query = querySchema.parse(Object.fromEntries(request.nextUrl.searchParams));
-    const repository = createSupabaseProductRepository();
+    const repository = createSupabaseProductRepository(auth.user.organizationId);
     const result = await repository.list(query);
 
     return NextResponse.json({ data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } });
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     if (auth.response) return auth.response;
 
     const body = productSchema.parse(await request.json());
-    const repository = createSupabaseProductRepository();
+    const repository = createSupabaseProductRepository(auth.user.organizationId);
     const product = await repository.create({
       category_id: body.categoryId,
       name: body.name,

@@ -37,7 +37,7 @@ export async function updateSession(request: NextRequest) {
 
   const supabaseResponse = NextResponse.next({ request });
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // Permite mostrar las pantallas públicas en instalaciones aún no configuradas.
   // Las rutas API protegidas no se consideran disponibles sin credenciales.

@@ -1,13 +1,15 @@
-name: Web E2E against deployment
+name: Authenticated web E2E
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: web-e2e-${{ github.workflow }}-${{ github.ref }}
+  group: web-authenticated-e2e-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -34,7 +36,7 @@ jobs:
           required=(PLAYWRIGHT_BASE_URL PLAYWRIGHT_API_URL E2E_EMAIL E2E_PASSWORD E2E_ADMIN_EMAIL E2E_ADMIN_PASSWORD E2E_RESTRICTED_EMAIL E2E_RESTRICTED_PASSWORD)
           for name in "${required[@]}"; do
             if [ -z "${!name}" ]; then
-              echo "Missing required secret: $name"
+              echo "Missing required repository secret: $name"
               exit 1
             fi
           done

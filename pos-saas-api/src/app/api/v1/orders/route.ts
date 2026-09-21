@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
-import { apiError, handleApiError } from "@/lib/api/response";
+import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +11,7 @@ const createSchema = z.object({ tableId: z.string().uuid().nullable().optional()
 const orderSelect = "id, table_id, user_id, status, total_amount, notes, guests, created_at, updated_at, table:tables_restaurant(name), order_items(id, quantity, unit_price, subtotal, status, notes, product:products(id, name))";
 
 function rpcConflict(error: { message?: string }) {
-  const message = error.message ?? "No se pudo completar la operación";
-  return apiError(message, 409);
+  return rpcApiError(error, "No se pudo completar el pedido");
 }
 
 export async function GET(request: NextRequest) {
@@ -20,7 +19,7 @@ export async function GET(request: NextRequest) {
     const auth = await authenticateApiRequest(request, ["admin", "cashier", "waiter", "kitchen", "staff"]);
     if (auth.response) return auth.response;
     const status = request.nextUrl.searchParams.get("status");
-    let query = (createAdminClient() as any).from("orders").select(orderSelect).order("created_at", { ascending: false }).limit(100);
+    let query = (createAdminClient() as any).from("orders").select(orderSelect).eq("organization_id", auth.user.organizationId).order("created_at", { ascending: false }).limit(100);
     if (status) query = query.eq("status", status);
     const { data, error } = await query;
     if (error) throw error;
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
     if (transactionError) return rpcConflict(transactionError);
     if (!orderId) return apiError("No se pudo crear el pedido", 500);
 
-    const { data: order, error: orderError } = await db.from("orders").select(orderSelect).eq("id", orderId).single();
+    const { data: order, error: orderError } = await db.from("orders").select(orderSelect).eq("id", orderId).eq("organization_id", auth.user.organizationId).single();
     if (orderError) throw orderError;
     return NextResponse.json({ data: order }, { status: 201 });
   } catch (error) {

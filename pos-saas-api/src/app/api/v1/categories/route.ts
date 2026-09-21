@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const auth = await authenticateApiRequest(request);
     if (auth.response) return auth.response;
 
-    const categories = await createSupabaseCategoryRepository().list();
+    const categories = await createSupabaseCategoryRepository(auth.user.organizationId).list();
     return NextResponse.json({ data: categories });
   } catch (error) {
     return handleApiError(error);
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (auth.response) return auth.response;
 
     const body = categorySchema.parse(await request.json());
-    const category = await createSupabaseCategoryRepository().create({
+    const category = await createSupabaseCategoryRepository(auth.user.organizationId).create({
       name: body.name,
       sort_order: body.sortOrder,
     });
