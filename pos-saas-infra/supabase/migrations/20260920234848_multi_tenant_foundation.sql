@@ -258,7 +258,8 @@ AS $$
   JOIN public.organizations ON organizations.id = organization_members.organization_id
   WHERE user_id = p_user_id
     AND organizations.is_active = true
-  ORDER BY is_default DESC, created_at ASC
+  ORDER BY organization_members.is_default DESC,
+           organization_members.created_at ASC
   LIMIT 1;
 $$;
 
