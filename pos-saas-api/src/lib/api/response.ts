@@ -10,7 +10,14 @@ export function apiError(message: string, status: number, details?: unknown) {
 
 export function handleApiError(error: unknown) {
   if (error instanceof ZodError) {
-    return apiError("Datos inválidos", 400, error.issues);
+    return apiError(
+      "Datos inválidos",
+      400,
+      error.issues.map((issue) => ({
+        field: issue.path.length ? issue.path.join(".") : "request",
+        message: issue.message,
+      })),
+    );
   }
 
   console.error("Unhandled API error:", error);

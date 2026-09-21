@@ -4,10 +4,11 @@ import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { getIdempotencyKey, hashIdempotencyPayload, parseIdempotentResult } from "@/lib/idempotency";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { boundedText, limits, money } from "@/lib/validation/rules";
 
 const bodySchema = z.object({
-  closingAmount: z.number().finite().min(0).max(99999999),
-  differenceReason: z.string().trim().max(300).optional(),
+  closingAmount: money(),
+  differenceReason: boundedText(limits.differenceReason).optional(),
 });
 
 export async function POST(request: NextRequest) {

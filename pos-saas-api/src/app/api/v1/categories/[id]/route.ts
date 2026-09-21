@@ -4,8 +4,9 @@ import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError } from "@/lib/api/response";
 import { CategoryInUseError } from "@/domain/catalog/category-repository";
 import { createSupabaseCategoryRepository } from "@/infrastructure/database/supabase/category-repository";
+import { uuid } from "@/lib/validation/rules";
 
-const idSchema = z.string().uuid();
+const idSchema = uuid;
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

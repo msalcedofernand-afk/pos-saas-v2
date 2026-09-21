@@ -188,7 +188,10 @@ export default function OrdersPage() {
             </label>
             <input
               id="order-guests"
+              inputMode="numeric"
+              max="999"
               min="1"
+              step="1"
               type="number"
               value={guests}
               onChange={(event) => setGuests(event.target.value)}

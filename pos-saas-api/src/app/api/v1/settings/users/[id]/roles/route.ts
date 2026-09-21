@@ -3,9 +3,10 @@ import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { handleApiError, rpcApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { uuid } from "@/lib/validation/rules";
 
-const idSchema = z.string().uuid();
-const bodySchema = z.object({ roleIds: z.array(z.string().uuid()).max(20) });
+const idSchema = uuid;
+const bodySchema = z.object({ roleIds: z.array(uuid).max(20) });
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

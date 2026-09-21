@@ -4,13 +4,14 @@ import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { getIdempotencyKey, hashIdempotencyPayload, parseIdempotentResult } from "@/lib/idempotency";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { boundedText, limits, positiveMoney, uuid } from "@/lib/validation/rules";
 
 const bodySchema = z.object({
-  orderId: z.string().uuid(),
+  orderId: uuid,
   method: z.enum(["cash", "card", "yape", "plin", "transfer", "qr"]),
-  amount: z.number().finite().positive(),
-  receivedAmount: z.number().finite().positive().optional(),
-  reference: z.string().trim().max(200).nullable().optional(),
+  amount: positiveMoney(),
+  receivedAmount: positiveMoney().optional(),
+  reference: boundedText(limits.paymentReference).nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {

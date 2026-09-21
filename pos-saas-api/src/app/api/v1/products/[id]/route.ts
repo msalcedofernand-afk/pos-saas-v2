@@ -3,16 +3,17 @@ import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError } from "@/lib/api/response";
 import { createSupabaseProductRepository } from "@/infrastructure/database/supabase/product-repository";
+import { boundedText, limits, money, strictInteger, uuid } from "@/lib/validation/rules";
 
-const idSchema = z.string().uuid();
+const idSchema = uuid;
 const updateSchema = z
   .object({
-    categoryId: z.string().uuid().optional(),
-    name: z.string().trim().min(1).max(150).optional(),
-    price: z.coerce.number().finite().min(0).max(999999.99).optional(),
-    description: z.string().trim().max(1000).nullable().optional(),
+    categoryId: uuid.optional(),
+    name: boundedText(limits.productName, 1).optional(),
+    price: money(999999.99).optional(),
+    description: boundedText(limits.description).nullable().optional(),
     isAvailable: z.boolean().optional(),
-    prepTimeMinutes: z.number().int().min(0).max(1440).optional(),
+    prepTimeMinutes: strictInteger(0, limits.prepTimeMinutes).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, "Debe enviar al menos un campo");
 

@@ -4,25 +4,26 @@ import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { getIdempotencyKey, hashIdempotencyPayload, parseIdempotentResult } from "@/lib/idempotency";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { boundedText, limits, strictInteger, strictQueryInteger, uuid } from "@/lib/validation/rules";
 
 export const dynamic = "force-dynamic";
 
 const itemSchema = z.object({
-  productId: z.string().uuid(),
-  quantity: z.number().int().min(1).max(999),
-  notes: z.string().trim().max(500).optional(),
+  productId: uuid,
+  quantity: strictInteger(1, limits.quantity),
+  notes: boundedText(limits.itemNotes).optional(),
 });
 const createSchema = z.object({
-  tableId: z.string().uuid().nullable().optional(),
-  guests: z.number().int().min(1).max(999).default(1),
-  notes: z.string().trim().max(1000).nullable().optional(),
+  tableId: uuid.nullable().optional(),
+  guests: strictInteger(1, limits.guests).default(1),
+  notes: boundedText(limits.orderNotes).nullable().optional(),
   items: z.array(itemSchema).min(1),
 });
 const statusSchema = z.enum(["pending", "confirmed", "preparing", "ready", "served", "paid", "cancelled"]);
 const listSchema = z.object({
   status: statusSchema.optional(),
-  page: z.coerce.number().int().min(1).max(10000).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
+  page: strictQueryInteger(1, limits.page, 1),
+  limit: strictQueryInteger(1, limits.limit, 50),
 });
 const orderSelect =
   "id, table_id, user_id, status, total_amount, notes, guests, created_at, updated_at, table:tables_restaurant(name), order_items(id, quantity, unit_price, subtotal, status, notes, product:products(id, name))";

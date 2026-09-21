@@ -3,27 +3,28 @@ import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { handleApiError } from "@/lib/api/response";
 import { createSupabaseProductRepository } from "@/infrastructure/database/supabase/product-repository";
+import { boundedText, limits, money, strictInteger, strictQueryInteger, uuid } from "@/lib/validation/rules";
 
 export const dynamic = "force-dynamic";
 
 const querySchema = z.object({
   search: z.string().trim().max(100).optional(),
-  categoryId: z.string().uuid().optional(),
+  categoryId: uuid.optional(),
   available: z
     .enum(["true", "false"])
     .transform((value) => value === "true")
     .optional(),
-  page: z.coerce.number().int().min(1).max(10000).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(25),
+  page: strictQueryInteger(1, limits.page, 1),
+  limit: strictQueryInteger(1, limits.limit, 25),
 });
 
 const productSchema = z.object({
-  categoryId: z.string().uuid(),
-  name: z.string().trim().min(1).max(150),
-  price: z.coerce.number().finite().min(0).max(999999.99),
-  description: z.string().trim().max(1000).nullable().optional(),
+  categoryId: uuid,
+  name: boundedText(limits.productName, 1),
+  price: money(999999.99),
+  description: boundedText(limits.description).nullable().optional(),
   isAvailable: z.boolean().default(true),
-  prepTimeMinutes: z.number().int().min(0).max(1440).default(0),
+  prepTimeMinutes: strictInteger(0, limits.prepTimeMinutes).default(0),
 });
 
 export async function GET(request: NextRequest) {

@@ -3,16 +3,17 @@ import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { handleApiError } from "@/lib/api/response";
 import { createSupabaseCategoryRepository } from "@/infrastructure/database/supabase/category-repository";
+import { boundedText, limits, strictInteger, strictQueryInteger } from "@/lib/validation/rules";
 
 export const dynamic = "force-dynamic";
 
 const categorySchema = z.object({
-  name: z.string().trim().min(1).max(100),
-  sortOrder: z.coerce.number().int().min(0).max(999999).default(0),
+  name: boundedText(limits.categoryName, 1),
+  sortOrder: strictInteger(0, limits.sortOrder).default(0),
 });
 const querySchema = z.object({
-  page: z.coerce.number().int().min(1).max(10000).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(100),
+  page: strictQueryInteger(1, limits.page, 1),
+  limit: strictQueryInteger(1, limits.limit, 100),
 });
 
 export async function GET(request: NextRequest) {

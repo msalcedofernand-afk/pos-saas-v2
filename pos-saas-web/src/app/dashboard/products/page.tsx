@@ -348,6 +348,7 @@ export default function ProductsPage() {
               Nombre
               <input
                 autoFocus
+                maxLength={150}
                 required
                 value={form.name}
                 onChange={(event) => setForm({ ...form, name: event.target.value })}
@@ -373,6 +374,8 @@ export default function ProductsPage() {
                 Precio
                 <input
                   required
+                  inputMode="decimal"
+                  max="999999.99"
                   min="0"
                   step="0.01"
                   type="number"
@@ -384,6 +387,9 @@ export default function ProductsPage() {
                 Preparación (min)
                 <input
                   min="0"
+                  inputMode="numeric"
+                  max="999"
+                  step="1"
                   type="number"
                   value={form.prepTimeMinutes}
                   onChange={(event) => setForm({ ...form, prepTimeMinutes: event.target.value })}
@@ -393,6 +399,7 @@ export default function ProductsPage() {
             <label>
               Descripción
               <textarea
+                maxLength={1000}
                 rows={3}
                 value={form.description}
                 onChange={(event) => setForm({ ...form, description: event.target.value })}
@@ -446,6 +453,7 @@ export default function ProductsPage() {
               Nombre
               <input
                 autoFocus
+                maxLength={100}
                 required
                 value={categoryName}
                 onChange={(event) => setCategoryName(event.target.value)}

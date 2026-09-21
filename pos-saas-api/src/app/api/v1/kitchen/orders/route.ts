@@ -3,13 +3,14 @@ import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { handleApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { limits, strictQueryInteger } from "@/lib/validation/rules";
 
 export const dynamic = "force-dynamic";
 
 const activeStatuses = ["pending", "confirmed", "preparing", "ready"] as const;
 const querySchema = z.object({
-  page: z.coerce.number().int().min(1).max(10000).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
+  page: strictQueryInteger(1, limits.page, 1),
+  limit: strictQueryInteger(1, limits.limit, 50),
 });
 
 export async function GET(request: NextRequest) {

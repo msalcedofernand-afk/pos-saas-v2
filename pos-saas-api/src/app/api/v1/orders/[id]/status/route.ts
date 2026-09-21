@@ -3,12 +3,13 @@ import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { boundedText, limits, uuid } from "@/lib/validation/rules";
 
 const bodySchema = z.object({
   status: z.enum(["confirmed", "cancelled"]),
-  reason: z.string().trim().max(500).optional(),
+  reason: boundedText(limits.itemNotes).optional(),
 });
-const idSchema = z.string().uuid();
+const idSchema = uuid;
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

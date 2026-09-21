@@ -3,13 +3,14 @@ import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { boundedText, money, stockQuantity, uuid } from "@/lib/validation/rules";
 
 const bodySchema = z.object({
-  inventoryItemId: z.string().uuid(),
+  inventoryItemId: uuid,
   type: z.enum(["in", "out", "adjustment"]),
-  quantity: z.number().finite().positive(),
-  unitCost: z.number().finite().min(0).default(0),
-  description: z.string().trim().max(300).optional(),
+  quantity: stockQuantity,
+  unitCost: money().default(0),
+  description: boundedText(300).optional(),
 });
 
 export async function POST(request: NextRequest) {

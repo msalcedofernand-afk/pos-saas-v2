@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { handleApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { limits, strictQueryInteger } from "@/lib/validation/rules";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
 const querySchema = z.object({
-  page: z.coerce.number().int().min(1).max(10000).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
+  page: strictQueryInteger(1, limits.page, 1),
+  limit: strictQueryInteger(1, limits.limit, 50),
 });
 
 export async function GET(request: NextRequest) {

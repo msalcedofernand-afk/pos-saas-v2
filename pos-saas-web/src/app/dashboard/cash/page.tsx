@@ -162,6 +162,8 @@ export default function CashPage() {
             <label>
               Monto inicial
               <input
+                inputMode="decimal"
+                max="99999999"
                 type="number"
                 min="0"
                 step="0.01"
@@ -189,8 +191,11 @@ export default function CashPage() {
             <div className="cash-close">
               <input
                 aria-label="Monto final"
+                inputMode="decimal"
+                max="99999999"
                 type="number"
                 min="0"
+                step="0.01"
                 placeholder="Monto final"
                 value={closingAmount}
                 onChange={(event) => setClosingAmount(event.target.value)}
@@ -281,6 +286,7 @@ export default function CashPage() {
                 type="number"
                 min="0.01"
                 max={paymentOrder.remaining_amount}
+                inputMode="decimal"
                 step="0.01"
                 value={paymentAmount}
                 onChange={(event) => setPaymentAmount(event.target.value)}
@@ -290,6 +296,8 @@ export default function CashPage() {
               <label>
                 Monto recibido
                 <input
+                  inputMode="decimal"
+                  max="99999999"
                   type="number"
                   min="0.01"
                   step="0.01"

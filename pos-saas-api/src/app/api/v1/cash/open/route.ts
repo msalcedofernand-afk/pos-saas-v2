@@ -4,8 +4,9 @@ import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError } from "@/lib/api/response";
 import { getIdempotencyKey, hashIdempotencyPayload, parseIdempotentResult } from "@/lib/idempotency";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { money } from "@/lib/validation/rules";
 
-const bodySchema = z.object({ openingAmount: z.number().finite().min(0).max(99999999) });
+const bodySchema = z.object({ openingAmount: money() });
 
 export async function POST(request: NextRequest) {
   try {
