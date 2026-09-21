@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test("landing pública tiene metadata básica", async ({ page }) => {
+test("la raíz pública dirige al login", async ({ page }) => {
   await page.goto("/");
-  await expect(page).toHaveTitle(/Mesa Clara/);
-  await expect(page.locator("h1")).toContainText("Opera tu negocio");
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page).toHaveTitle(/Iniciar sesión/);
+  await expect(page.locator("h1")).toContainText("Iniciar sesión");
 });
 
 test("rutas SEO públicas están disponibles", async ({ request }) => {
