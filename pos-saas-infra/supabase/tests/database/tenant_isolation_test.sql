@@ -1,6 +1,22 @@
 BEGIN;
 
-SELECT plan(4);
+SELECT plan(6);
+
+INSERT INTO auth.users (id, email, encrypted_password, aud, role, email_confirmed_at)
+VALUES (
+  '00000000-0000-0000-0000-000000000101',
+  'tenant-one@example.com',
+  '',
+  'authenticated',
+  'authenticated',
+  now()
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.organization_members (organization_id, user_id, role_id, is_default)
+SELECT '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', id, true
+FROM public.roles WHERE name = 'admin'
+ON CONFLICT (organization_id, user_id, role_id) DO NOTHING;
 
 INSERT INTO auth.users (id, email, encrypted_password, aud, role, email_confirmed_at)
 VALUES (
@@ -24,6 +40,20 @@ VALUES ('00000000-0000-0000-0000-000000000203', '00000000-0000-0000-0000-0000000
 
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000101', true);
+
+SELECT throws_ok(
+  $$SELECT 1 FROM public.users LIMIT 1$$,
+  '42501',
+  NULL,
+  'los perfiles de usuario sólo son accesibles desde el servidor'
+);
+
+SELECT throws_ok(
+  $$SELECT 1 FROM public.user_roles LIMIT 1$$,
+  '42501',
+  NULL,
+  'las asignaciones de roles sólo son accesibles desde el servidor'
+);
 
 SELECT is(
   (SELECT count(*)::integer FROM public.categories WHERE organization_id = '00000000-0000-0000-0000-000000000202'),

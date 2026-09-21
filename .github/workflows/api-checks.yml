@@ -116,6 +116,7 @@ jobs:
               public.ecr.aws/supabase/pg_prove:3.36 \
               pg_prove --host=127.0.0.1 --port=54322 --username=postgres --dbname=postgres \
                 /tests/database/order_cash_integrity_test.sql \
+                /tests/database/tenant_isolation_test.sql \
               2>&1 | tee "$RUNNER_TEMP/pg-prove-direct.log" || true
             while IFS= read -r line; do
               echo "::error title=Direct pgTAP diagnostic::$line"
