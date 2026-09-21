@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: pos-saas-api/package-lock.json
       - run: npm ci
@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: pos-saas-infra/package-lock.json
       - run: npm ci
@@ -110,20 +110,25 @@ jobs:
           test_status=0
           supabase test db --local 2>&1 | tee "$RUNNER_TEMP/supabase-test-db.log" || test_status=$?
           if [ "$test_status" -ne 0 ]; then
-            docker run --rm --network host \
-              -e PGPASSWORD=postgres \
-              -v "$GITHUB_WORKSPACE/pos-saas-infra/supabase/tests:/tests:ro" \
-              public.ecr.aws/supabase/pg_prove:3.36 \
-              pg_prove --host=127.0.0.1 --port=54322 --username=postgres --dbname=postgres \
-                /tests/database/order_cash_integrity_test.sql \
-                /tests/database/tenant_isolation_test.sql \
-              2>&1 | tee "$RUNNER_TEMP/pg-prove-direct.log" || true
+            direct_status=0
+            for test_file in order_cash_integrity_test.sql tenant_isolation_test.sql; do
+              docker run --rm --network host \
+                -e PGPASSWORD=postgres \
+                -v "$GITHUB_WORKSPACE/pos-saas-infra/supabase/tests:/tests:ro" \
+                public.ecr.aws/supabase/pg_prove:3.36 \
+                pg_prove --host=127.0.0.1 --port=54322 --username=postgres --dbname=postgres \
+                  "/tests/database/$test_file" \
+                2>&1 | tee -a "$RUNNER_TEMP/pg-prove-direct.log" || direct_status=1
+            done
             while IFS= read -r line; do
               echo "::error title=Direct pgTAP diagnostic::$line"
             done < "$RUNNER_TEMP/pg-prove-direct.log"
             while IFS= read -r line; do
               echo "::error title=Supabase database test::$line"
             done < "$RUNNER_TEMP/supabase-test-db.log"
+            if [ "$direct_status" -ne 0 ]; then
+              echo "::error title=Direct pgTAP diagnostic::One or more direct pgTAP files failed"
+            fi
             exit "$test_status"
           fi
         working-directory: pos-saas-infra
@@ -133,7 +138,9 @@ jobs:
         with:
           name: supabase-test-db-log
           path: ${{ runner.temp }}/supabase-test-db.log
-      - run: supabase db lint --local
+      - name: Run database lint
+        if: always()
+        run: supabase db lint --local
         working-directory: pos-saas-infra
       - if: always()
         run: supabase stop --no-backup
