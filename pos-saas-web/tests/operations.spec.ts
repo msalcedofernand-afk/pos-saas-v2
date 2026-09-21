@@ -33,6 +33,17 @@ function idempotentCsrfOptions(csrfToken: string, data?: unknown) {
   return { data, headers: { "X-CSRF-Token": csrfToken, "Idempotency-Key": crypto.randomUUID() } };
 }
 
+function scopedIdempotentCsrfOptions(csrfToken: string, organizationId: string, data?: unknown) {
+  return {
+    data,
+    headers: {
+      "X-CSRF-Token": csrfToken,
+      "X-Organization-Id": organizationId,
+      "Idempotency-Key": crypto.randomUUID(),
+    },
+  };
+}
+
 type TestProduct = { id: string; createdCategoryId?: string };
 
 async function createTestProduct(adminApi: APIRequestContext, csrfToken: string): Promise<TestProduct> {
@@ -126,6 +137,70 @@ test.describe("operaciones autenticadas", () => {
     expect(scopedUser.organizationId).toBe(targetOrganization!.id);
   });
 
+  test("aislamiento de datos entre organizaciones", async ({ request }) => {
+    requireOrSkip(configured, "Configura E2E_EMAIL, E2E_PASSWORD y credenciales admin para probar aislamiento");
+    const adminApi = await requestContext.newContext();
+    let product: TestProduct | undefined;
+    let orderId: string | undefined;
+    let adminCsrfToken: string | undefined;
+    let actorCsrfToken: string | undefined;
+    try {
+      const actor = await login(request, actorCredentials);
+      actorCsrfToken = actor.data.csrfToken;
+      requireOrSkip(
+        actor.data.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)),
+        "La cuenta E2E no puede crear pedidos",
+      );
+
+      const organizationsResponse = await request.get(`${apiUrl}/api/v1/organizations`);
+      expect(organizationsResponse.status(), await organizationsResponse.text()).toBe(200);
+      const organizations = (await organizationsResponse.json()).data as Array<{ id: string }>;
+      requireOrSkip(organizations.length >= 2, "La cuenta E2E debe pertenecer a dos organizaciones de staging");
+      const primaryOrganizationId = actor.data.user.organizationId;
+      const targetOrganization = organizations.find((organization) => organization.id !== primaryOrganizationId);
+      expect(targetOrganization).toBeTruthy();
+
+      const admin = await login(adminApi, adminCredentials);
+      adminCsrfToken = admin.data.csrfToken;
+      requireOrSkip(admin.data.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
+      expect(admin.data.user.organizationId).toBe(primaryOrganizationId);
+      product = await createTestProduct(adminApi, admin.data.csrfToken);
+
+      orderId = await createTestOrder(request, product.id, actor.data.csrfToken).then((order) => order.id);
+
+      const foreignProductsResponse = await request.get(`${apiUrl}/api/v1/products`, {
+        headers: { "X-Organization-Id": targetOrganization!.id },
+      });
+      expect(foreignProductsResponse.status(), await foreignProductsResponse.text()).toBe(200);
+      const foreignProducts = (await foreignProductsResponse.json()).data as Array<{ id: string }>;
+      expect(foreignProducts.some((foreignProduct) => foreignProduct.id === product!.id)).toBe(false);
+
+      const foreignOrdersResponse = await request.get(`${apiUrl}/api/v1/orders`, {
+        headers: { "X-Organization-Id": targetOrganization!.id },
+      });
+      expect(foreignOrdersResponse.status(), await foreignOrdersResponse.text()).toBe(200);
+      const foreignOrders = (await foreignOrdersResponse.json()).data as Array<{ id: string }>;
+      expect(foreignOrders.some((foreignOrder) => foreignOrder.id === orderId)).toBe(false);
+
+      const crossOrganizationOrder = await request.post(
+        `${apiUrl}/api/v1/orders`,
+        scopedIdempotentCsrfOptions(actor.data.csrfToken, targetOrganization!.id, {
+          tableId: null,
+          guests: 1,
+          items: [{ productId: product.id, quantity: 1 }],
+        }),
+      );
+      expect([400, 403, 404, 409]).toContain(crossOrganizationOrder.status());
+    } finally {
+      if (orderId && actorCsrfToken)
+        await request
+          .patch(`${apiUrl}/api/v1/orders/${orderId}/status`, csrfOptions(actorCsrfToken, { status: "cancelled" }))
+          .catch(() => undefined);
+      if (product && adminCsrfToken) await cleanupTestProduct(adminApi, adminCsrfToken, product);
+      await adminApi.dispose();
+    }
+  });
+
   test("creación y limpieza de productos", async () => {
     requireOrSkip(configured, "Configura E2E_ADMIN_EMAIL y E2E_ADMIN_PASSWORD para preparar productos");
     const adminApi = await requestContext.newContext();
@@ -214,27 +289,51 @@ test.describe("operaciones autenticadas", () => {
       result.data.roles.some((role) => ["admin", "cashier"].includes(role)),
       "La cuenta E2E no puede operar caja",
     );
-    const summary = await (await request.get(`${apiUrl}/api/v1/cash/summary`)).json();
-    if (summary.data.shift) {
-      expect(summary.data.shift.status).toBe("open");
-      return;
+    const organizationsResponse = await request.get(`${apiUrl}/api/v1/organizations`);
+    expect(organizationsResponse.status(), await organizationsResponse.text()).toBe(200);
+    const organizations = (await organizationsResponse.json()).data as Array<{ id: string }>;
+    let cashOrganizationId: string | undefined;
+    for (const organization of organizations) {
+      const summaryResponse = await request.get(`${apiUrl}/api/v1/cash/summary`, {
+        headers: { "X-Organization-Id": organization.id },
+      });
+      if (summaryResponse.status() !== 200) continue;
+      const summary = (await summaryResponse.json()).data as { shift: unknown | null };
+      if (!summary.shift) {
+        cashOrganizationId = organization.id;
+        break;
+      }
     }
-    expect(
-      (
-        await request.post(
-          `${apiUrl}/api/v1/cash/open`,
-          idempotentCsrfOptions(result.data.csrfToken, { openingAmount: 0 }),
-        )
-      ).status(),
-    ).toBe(201);
-    expect(
-      (
-        await request.post(
-          `${apiUrl}/api/v1/cash/close`,
-          idempotentCsrfOptions(result.data.csrfToken, { closingAmount: 0 }),
-        )
-      ).status(),
-    ).toBe(200);
+    requireOrSkip(cashOrganizationId !== undefined, "No hay una organización E2E sin caja abierta disponible");
+    let opened = false;
+    try {
+      expect(
+        (
+          await request.post(
+            `${apiUrl}/api/v1/cash/open`,
+            scopedIdempotentCsrfOptions(result.data.csrfToken, cashOrganizationId!, { openingAmount: 0 }),
+          )
+        ).status(),
+      ).toBe(201);
+      opened = true;
+      expect(
+        (
+          await request.post(
+            `${apiUrl}/api/v1/cash/close`,
+            scopedIdempotentCsrfOptions(result.data.csrfToken, cashOrganizationId!, { closingAmount: 0 }),
+          )
+        ).status(),
+      ).toBe(200);
+      opened = false;
+    } finally {
+      if (opened)
+        await request
+          .post(
+            `${apiUrl}/api/v1/cash/close`,
+            scopedIdempotentCsrfOptions(result.data.csrfToken, cashOrganizationId!, { closingAmount: 0 }),
+          )
+          .catch(() => undefined);
+    }
   });
 
   test("cambio de estados en cocina", async ({ request }) => {
