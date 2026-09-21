@@ -3,6 +3,10 @@ let csrfToken: string | null = null;
 
 const mutatingMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
+export function createIdempotencyKey(): string {
+  return crypto.randomUUID();
+}
+
 async function getCsrfToken() {
   if (csrfToken) return csrfToken;
   const response = await fetch(`${API_URL}/api/v1/auth/csrf`, {

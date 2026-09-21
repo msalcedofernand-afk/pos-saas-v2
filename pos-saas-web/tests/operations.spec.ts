@@ -25,6 +25,10 @@ function csrfOptions(csrfToken: string, data?: unknown) {
   return { data, headers: { "X-CSRF-Token": csrfToken } };
 }
 
+function idempotentCsrfOptions(csrfToken: string, data?: unknown) {
+  return { data, headers: { "X-CSRF-Token": csrfToken, "Idempotency-Key": crypto.randomUUID() } };
+}
+
 async function createTestProduct(adminApi: APIRequestContext, csrfToken: string) {
   const categoriesResponse = await adminApi.get(`${apiUrl}/api/v1/categories`);
   const categories = (await categoriesResponse.json()).data as { id: string }[];
@@ -37,7 +41,7 @@ async function createTestProduct(adminApi: APIRequestContext, csrfToken: string)
 }
 
 async function createTestOrder(actorApi: APIRequestContext, productId: string, csrfToken: string) {
-  const response = await actorApi.post(`${apiUrl}/api/v1/orders`, csrfOptions(csrfToken, {
+  const response = await actorApi.post(`${apiUrl}/api/v1/orders`, idempotentCsrfOptions(csrfToken, {
     tableId: null, guests: 1, items: [{ productId, quantity: 1 }],
   }));
   expect(response.status(), await response.text()).toBe(201);
@@ -133,8 +137,8 @@ test.describe("operaciones autenticadas", () => {
       expect(summary.data.shift.status).toBe("open");
       return;
     }
-    expect((await request.post(`${apiUrl}/api/v1/cash/open`, csrfOptions(result.data.csrfToken, { openingAmount: 0 }))).status()).toBe(201);
-    expect((await request.post(`${apiUrl}/api/v1/cash/close`, csrfOptions(result.data.csrfToken, { closingAmount: 0 }))).status()).toBe(200);
+    expect((await request.post(`${apiUrl}/api/v1/cash/open`, idempotentCsrfOptions(result.data.csrfToken, { openingAmount: 0 }))).status()).toBe(201);
+    expect((await request.post(`${apiUrl}/api/v1/cash/close`, idempotentCsrfOptions(result.data.csrfToken, { closingAmount: 0 }))).status()).toBe(200);
   });
 
   test("cambio de estados en cocina", async ({ request }) => {

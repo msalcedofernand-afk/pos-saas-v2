@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
+import { getIdempotencyKey, hashIdempotencyPayload, parseIdempotentResult } from "@/lib/idempotency";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -34,20 +35,26 @@ export async function POST(request: NextRequest) {
     const auth = await authenticateApiRequest(request, ["admin", "waiter", "cashier"]);
     if (auth.response) return auth.response;
     const body = createSchema.parse(await request.json());
+    const idempotencyKey = getIdempotencyKey(request);
+    if (!idempotencyKey) return apiError("Falta el header Idempotency-Key", 400);
     const db = createAdminClient() as any;
-    const { data: orderId, error: transactionError } = await db.rpc("create_order_transaction", {
+    const { data: rawResult, error: transactionError } = await db.rpc("create_order_transaction_idempotent", {
       p_user_id: auth.user.id,
       p_table_id: body.tableId ?? null,
       p_guests: body.guests,
       p_notes: body.notes ?? null,
       p_items: body.items.map((item) => ({ product_id: item.productId, quantity: item.quantity, notes: item.notes ?? null })),
+      p_idempotency_key: idempotencyKey,
+      p_request_hash: hashIdempotencyPayload(body),
     });
     if (transactionError) return rpcConflict(transactionError);
+    const result = parseIdempotentResult<{ orderId?: string; replayed?: boolean }>(rawResult);
+    const orderId = result.orderId;
     if (!orderId) return apiError("No se pudo crear el pedido", 500);
 
     const { data: order, error: orderError } = await db.from("orders").select(orderSelect).eq("id", orderId).eq("organization_id", auth.user.organizationId).single();
     if (orderError) throw orderError;
-    return NextResponse.json({ data: order }, { status: 201 });
+    return NextResponse.json({ data: order, meta: { replayed: result.replayed === true } }, { status: result.replayed ? 200 : 201 });
   } catch (error) {
     return handleApiError(error);
   }

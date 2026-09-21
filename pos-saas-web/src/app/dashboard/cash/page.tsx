@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch, createIdempotencyKey } from "@/lib/api/client";
 
 type Shift = { id: string; opened_at: string; opening_amount: number; status: string };
 type CashOrder = {
@@ -47,6 +47,7 @@ export default function CashPage() {
     try {
       await apiFetch("/api/v1/cash/open", {
         method: "POST",
+        headers: { "Idempotency-Key": createIdempotencyKey() },
         body: JSON.stringify({ openingAmount: Number(openingAmount) }),
       });
       await load();
@@ -80,6 +81,7 @@ export default function CashPage() {
     try {
       await apiFetch("/api/v1/cash/payments", {
         method: "POST",
+        headers: { "Idempotency-Key": createIdempotencyKey() },
         body: JSON.stringify({
           orderId: paymentOrder.id,
           method,
@@ -106,6 +108,7 @@ export default function CashPage() {
     try {
       await apiFetch("/api/v1/cash/close", {
         method: "POST",
+        headers: { "Idempotency-Key": createIdempotencyKey() },
         body: JSON.stringify({
           closingAmount: amount,
           differenceReason: differenceReason.trim() || undefined,

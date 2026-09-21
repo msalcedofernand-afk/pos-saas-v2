@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Toast } from "@/components/ui/Toast";
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch, createIdempotencyKey } from "@/lib/api/client";
 
 type Product = { id: string; name: string; price: number; is_available: boolean; categories?: { name: string } | null };
 type Table = { id: string; name: string; capacity: number; status: string };
@@ -71,7 +71,7 @@ export default function OrdersPage() {
     if (cart.length === 0) return;
     setSaving(true);
     try {
-      await apiFetch("/api/v1/orders", { method: "POST", body: JSON.stringify({ tableId: tableId || null, guests: Number(guests), items: cart.map((item) => ({ productId: item.productId, quantity: item.quantity })) }) });
+      await apiFetch("/api/v1/orders", { method: "POST", headers: { "Idempotency-Key": createIdempotencyKey() }, body: JSON.stringify({ tableId: tableId || null, guests: Number(guests), items: cart.map((item) => ({ productId: item.productId, quantity: item.quantity })) }) });
       setCart([]);
       setTableId("");
       await loadData();
