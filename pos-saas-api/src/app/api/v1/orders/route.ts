@@ -10,6 +10,11 @@ export const dynamic = "force-dynamic";
 const itemSchema = z.object({ productId: z.string().uuid(), quantity: z.number().int().min(1).max(999), notes: z.string().trim().max(500).optional() });
 const createSchema = z.object({ tableId: z.string().uuid().nullable().optional(), guests: z.number().int().min(1).max(999).default(1), notes: z.string().trim().max(1000).nullable().optional(), items: z.array(itemSchema).min(1) });
 const statusSchema = z.enum(["pending", "confirmed", "preparing", "ready", "served", "paid", "cancelled"]);
+const listSchema = z.object({
+  status: statusSchema.optional(),
+  page: z.coerce.number().int().min(1).max(10000).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
 const orderSelect = "id, table_id, user_id, status, total_amount, notes, guests, created_at, updated_at, table:tables_restaurant(name), order_items(id, quantity, unit_price, subtotal, status, notes, product:products(id, name))";
 
 function rpcConflict(error: { message?: string }) {
@@ -20,13 +25,14 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await authenticateApiRequest(request, ["admin", "cashier", "waiter", "kitchen", "staff"]);
     if (auth.response) return auth.response;
-    const status = request.nextUrl.searchParams.get("status");
-    const statusValue = status ? statusSchema.parse(status) : null;
-    let query = createAdminClient().from("orders").select(orderSelect).eq("organization_id", auth.user.organizationId).order("created_at", { ascending: false }).limit(100);
-    if (statusValue) query = query.eq("status", statusValue);
-    const { data, error } = await query;
+    const queryParams = listSchema.parse(Object.fromEntries(request.nextUrl.searchParams));
+    const from = (queryParams.page - 1) * queryParams.limit;
+    const to = from + queryParams.limit - 1;
+    let query = createAdminClient().from("orders").select(orderSelect, { count: "exact" }).eq("organization_id", auth.user.organizationId).order("created_at", { ascending: false }).range(from, to);
+    if (queryParams.status) query = query.eq("status", queryParams.status);
+    const { data, error, count } = await query;
     if (error) throw error;
-    return NextResponse.json({ data: data ?? [] });
+    return NextResponse.json({ data: data ?? [], meta: { page: queryParams.page, limit: queryParams.limit, total: count ?? 0, hasMore: (count ?? 0) > to + 1 } });
   } catch (error) {
     return handleApiError(error);
   }

@@ -21,14 +21,15 @@ export async function GET(request: NextRequest) {
     const { date } = querySchema.parse(Object.fromEntries(request.nextUrl.searchParams));
     const targetDate = date ?? businessDate();
     const { start, end } = businessDayRange(targetDate);
-    const db = createAdminClient() as any;
+    const db = createAdminClient();
     const { data, error } = await db.rpc("get_report_summary", {
       p_organization_id: auth.user.organizationId,
       p_start: start.toISOString(),
       p_end: end.toISOString(),
     });
     if (error) throw error;
-    return NextResponse.json({ data: { date: targetDate, ...(data ?? {}) } });
+    const summary = data && typeof data === "object" && !Array.isArray(data) ? data : {};
+    return NextResponse.json({ data: { date: targetDate, ...summary } });
   } catch (error) {
     return handleApiError(error);
   }

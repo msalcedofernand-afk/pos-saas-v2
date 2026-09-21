@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await authenticateApiRequest(request, ["admin", "cashier", "waiter", "staff"]);
     if (auth.response) return auth.response;
-    const { data, error } = await (createAdminClient() as any)
+    const { data, error } = await createAdminClient()
       .from("tables_restaurant")
       .select("id, name, capacity, status")
       .eq("organization_id", auth.user.organizationId)
