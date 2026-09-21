@@ -20,7 +20,9 @@ function requireOrSkip(condition: boolean, reason: string) {
 async function login(request: APIRequestContext, credentials: { email?: string; password?: string }) {
   const response = await request.post(`${apiUrl}/api/v1/auth/login`, { data: credentials });
   expect(response.status(), await response.text()).toBe(200);
-  return response.json() as Promise<{ data: { user: { roles: string[] }; csrfToken: string } }>;
+  return response.json() as Promise<{
+    data: { user: { roles: string[]; organizationId: string }; csrfToken: string };
+  }>;
 }
 
 function csrfOptions(csrfToken: string, data?: unknown) {
@@ -75,6 +77,26 @@ test.describe("operaciones autenticadas", () => {
       data: { email: actorCredentials.email, password: `${actorCredentials.password}-incorrecta` },
     });
     expect(response.status()).toBe(401);
+  });
+
+  test("cambio explícito de organización", async ({ request }) => {
+    requireOrSkip(configured, "Configura E2E_EMAIL y E2E_PASSWORD para probar multi-tenant");
+    const result = await login(request, actorCredentials);
+    const organizationsResponse = await request.get(`${apiUrl}/api/v1/organizations`);
+    expect(organizationsResponse.status(), await organizationsResponse.text()).toBe(200);
+    const organizations = (await organizationsResponse.json()).data as Array<{ id: string }>;
+    requireOrSkip(organizations.length >= 2, "La cuenta E2E debe pertenecer a dos organizaciones de staging");
+
+    const targetOrganization = organizations.find(
+      (organization) => organization.id !== result.data.user.organizationId,
+    );
+    expect(targetOrganization).toBeTruthy();
+    const scopedMe = await request.get(`${apiUrl}/api/v1/auth/me`, {
+      headers: { "X-Organization-Id": targetOrganization!.id },
+    });
+    expect(scopedMe.status(), await scopedMe.text()).toBe(200);
+    const scopedUser = (await scopedMe.json()).data.user as { organizationId: string };
+    expect(scopedUser.organizationId).toBe(targetOrganization!.id);
   });
 
   test("creación y limpieza de productos", async () => {

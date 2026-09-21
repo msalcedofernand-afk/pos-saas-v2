@@ -20,7 +20,7 @@ export class CategoryInUseError extends Error {
 }
 
 export interface CategoryRepository {
-  list(): Promise<CategoryRecord[]>;
+  list(filters: { page: number; limit: number }): Promise<{ data: CategoryRecord[]; total: number | null }>;
   create(input: CategoryInput): Promise<CategoryRecord>;
   remove(id: string): Promise<void>;
 }

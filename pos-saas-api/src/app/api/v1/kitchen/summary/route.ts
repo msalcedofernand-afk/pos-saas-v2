@@ -3,16 +3,21 @@ import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { handleApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { businessDateOffset, businessDayRange } from "@/lib/date/business-date";
+import { businessDateOffset, businessDayRange, isValidBusinessDate } from "@/lib/date/business-date";
 
 export const dynamic = "force-dynamic";
 
-const querySchema = z.object({
-  date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-});
+const querySchema = z
+  .object({
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+  })
+  .refine(({ date }) => !date || isValidBusinessDate(date), {
+    path: ["date"],
+    message: "La fecha no existe",
+  });
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,24 +28,14 @@ export async function GET(request: NextRequest) {
     const targetDate = date ?? businessDateOffset(-1);
     const { start, end } = businessDayRange(targetDate);
 
-    const supabase = createAdminClient();
-    const { data, error } = await (supabase as any)
-      .from("orders")
-      .select("status, total_amount")
-      .eq("organization_id", auth.user.organizationId)
-      .gte("created_at", start.toISOString())
-      .lt("created_at", end.toISOString());
-
+    const { data, error } = await createAdminClient().rpc("get_kitchen_summary", {
+      p_organization_id: auth.user.organizationId,
+      p_start: start.toISOString(),
+      p_end: end.toISOString(),
+    });
     if (error) throw error;
-
-    const orders = data ?? [];
-    const served = orders.filter((order: any) => ["served", "paid"].includes(order.status)).length;
-    const cancelled = orders.filter((order: any) => order.status === "cancelled").length;
-    const sales = orders
-      .filter((order: any) => order.status === "paid")
-      .reduce((total: number, order: any) => total + Number(order.total_amount ?? 0), 0);
-
-    return NextResponse.json({ data: { date: targetDate, orders: orders.length, served, cancelled, sales } });
+    const summary = data && typeof data === "object" && !Array.isArray(data) ? data : {};
+    return NextResponse.json({ data: { date: targetDate, ...summary } });
   } catch (error) {
     return handleApiError(error);
   }

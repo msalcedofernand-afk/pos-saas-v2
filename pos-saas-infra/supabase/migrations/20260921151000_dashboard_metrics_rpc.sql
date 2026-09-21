@@ -60,3 +60,29 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION public.get_dashboard_metrics(uuid, timestamptz, timestamptz) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_dashboard_metrics(uuid, timestamptz, timestamptz) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.get_kitchen_summary(
+  p_organization_id uuid,
+  p_start timestamptz,
+  p_end timestamptz
+)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+  SELECT pg_catalog.jsonb_build_object(
+    'orders', count(*),
+    'served', count(*) FILTER (WHERE o.status IN ('served', 'paid')),
+    'cancelled', count(*) FILTER (WHERE o.status = 'cancelled'),
+    'sales', COALESCE(sum(o.total_amount) FILTER (WHERE o.status = 'paid'), 0)
+  )
+  FROM public.orders o
+  WHERE o.organization_id = p_organization_id
+    AND o.created_at >= p_start
+    AND o.created_at < p_end;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.get_kitchen_summary(uuid, timestamptz, timestamptz) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_kitchen_summary(uuid, timestamptz, timestamptz) TO service_role;

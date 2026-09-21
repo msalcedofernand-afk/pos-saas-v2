@@ -8,16 +8,18 @@ export function createSupabaseCategoryRepository(organizationId: string): Catego
   const db = createAdminClient();
 
   return {
-    async list() {
-      const { data, error } = await db
+    async list({ page, limit }) {
+      const from = (page - 1) * limit;
+      const { data, count, error } = await db
         .from("categories")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("organization_id", organizationId)
         .order("sort_order", { ascending: true })
-        .order("name", { ascending: true });
+        .order("name", { ascending: true })
+        .range(from, from + limit - 1);
 
       if (error) throw error;
-      return (data ?? []) as CategoryRecord[];
+      return { data: (data ?? []) as CategoryRecord[], total: count };
     },
 
     async create(input: CategoryInput) {

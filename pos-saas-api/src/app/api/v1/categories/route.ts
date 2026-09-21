@@ -10,14 +10,22 @@ const categorySchema = z.object({
   name: z.string().trim().min(1).max(100),
   sortOrder: z.coerce.number().int().min(0).max(999999).default(0),
 });
+const querySchema = z.object({
+  page: z.coerce.number().int().min(1).max(10000).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(100),
+});
 
 export async function GET(request: NextRequest) {
   try {
     const auth = await authenticateApiRequest(request);
     if (auth.response) return auth.response;
 
-    const categories = await createSupabaseCategoryRepository(auth.user.organizationId).list();
-    return NextResponse.json({ data: categories });
+    const query = querySchema.parse(Object.fromEntries(request.nextUrl.searchParams));
+    const result = await createSupabaseCategoryRepository(auth.user.organizationId).list(query);
+    return NextResponse.json({
+      data: result.data,
+      meta: { page: query.page, limit: query.limit, total: result.total },
+    });
   } catch (error) {
     return handleApiError(error);
   }
