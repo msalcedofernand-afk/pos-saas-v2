@@ -86,7 +86,7 @@ export default function ProductsPage() {
       try {
         const [session, categoryResponse] = await Promise.all([
           apiFetch<Session>("/api/v1/auth/me"),
-          apiFetch<CategoryResponse>("/api/v1/categories"),
+          apiFetch<CategoryResponse>("/api/v1/categories?limit=100"),
         ]);
         setRoles(session.data.user.roles);
         setCategories(categoryResponse.data);

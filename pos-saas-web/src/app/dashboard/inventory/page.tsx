@@ -28,7 +28,7 @@ export default function InventoryPage() {
 
   const load = useCallback(async () => {
     try {
-      setItems((await apiFetch<{ data: InventoryItem[] }>("/api/v1/inventory")).data);
+      setItems((await apiFetch<{ data: InventoryItem[] }>("/api/v1/inventory?limit=100")).data);
       setError(null);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "No se pudo cargar inventario";
