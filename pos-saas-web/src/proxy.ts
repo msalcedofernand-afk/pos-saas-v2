@@ -5,7 +5,7 @@ const apiOrigin = new URL(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3
 function buildCsp(nonce?: string) {
   const scriptSource =
     process.env.NODE_ENV === "production"
-      ? `'self' 'nonce-${nonce}' 'strict-dynamic'`
+      ? `'self' 'nonce-${nonce}'`
       : "'self' 'unsafe-inline' 'unsafe-eval'";
 
   return [
@@ -29,10 +29,12 @@ export function proxy(request: NextRequest) {
   }
 
   const nonce = btoa(crypto.randomUUID());
+  const csp = buildCsp(nonce);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
-  response.headers.set("Content-Security-Policy", buildCsp(nonce));
+  response.headers.set("Content-Security-Policy", csp);
   return response;
 }
 

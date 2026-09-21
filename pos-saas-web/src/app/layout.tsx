@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { brand } from "@/config/brand";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001"),
   title: { default: brand.name, template: `%s · ${brand.name}` },

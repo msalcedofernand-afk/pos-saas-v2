@@ -11,6 +11,32 @@ function describeAdminKeyFormat() {
   return "unknown";
 }
 
+function describeLegacyJwtRole() {
+  if (!adminKey?.startsWith("eyJ")) return "not_legacy_jwt";
+
+  try {
+    const payload = JSON.parse(Buffer.from(adminKey.split(".")[1] ?? "", "base64url").toString("utf8")) as {
+      role?: unknown;
+    };
+    return typeof payload.role === "string" ? payload.role : "missing";
+  } catch {
+    return "invalid_jwt";
+  }
+}
+
+function describeLegacyJwtProjectRef() {
+  if (!adminKey?.startsWith("eyJ")) return "not_legacy_jwt";
+
+  try {
+    const payload = JSON.parse(Buffer.from(adminKey.split(".")[1] ?? "", "base64url").toString("utf8")) as {
+      ref?: unknown;
+    };
+    return typeof payload.ref === "string" ? payload.ref : "missing";
+  } catch {
+    return "invalid_jwt";
+  }
+}
+
 export const dynamic = "force-dynamic";
 
 function describeError(error: unknown) {
@@ -52,6 +78,8 @@ export async function GET() {
         hasSupabaseUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
         hasAdminKey: Boolean(adminKey),
         adminKeyFormat: describeAdminKeyFormat(),
+        adminKeyRole: describeLegacyJwtRole(),
+        adminKeyProjectRef: describeLegacyJwtProjectRef(),
         adminKeySource: process.env.SUPABASE_SECRET_KEY
           ? "SUPABASE_SECRET_KEY"
           : process.env.SUPABASE_SERVICE_ROLE_KEY
