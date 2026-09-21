@@ -25,8 +25,9 @@ y usuarios de prueba. No uses cuentas ni datos de producción para E2E.
    node scripts/preflight-production.mjs --surface web
    ```
 
-8. Configurar los secretos E2E de staging en GitHub y ejecutar manualmente
-   `Authenticated web E2E`.
+8. Configurar los secretos E2E de staging en GitHub. El workflow
+   `Authenticated web E2E` se ejecuta manualmente y también después de cada push
+   a `main`; antes de probar espera que la API y la web de staging respondan.
 9. Verificar health, readiness, CORS, login, cookies, cambio de organización,
    pedido, cocina, pago, caja y reportes.
 
@@ -55,9 +56,63 @@ En PowerShell puedes validar CORS con:
   -WebOrigin https://app.tudominio.com
 ```
 
+La URL que debe considerarse producción es la configurada en Vercel y en los
+secretos del entorno `production`, no una URL de ejemplo. Antes de abrir el
+servicio, verifica ambas superficies:
+
+```powershell
+curl.exe -i https://api.tudominio.com/api/v1/health
+curl.exe -i https://api.tudominio.com/api/v1/health/ready
+curl.exe -I https://app.tudominio.com/status
+```
+
+`health/ready` debe devolver `200` y `"supabase":"ok"`. La URL `/status` debe
+devolver `200` desde la web pública.
+
+## Monitoreo externo
+
+Configura un monitor externo (por ejemplo Better Uptime, UptimeRobot o el
+monitoring del proveedor) con estas comprobaciones:
+
+- `GET https://api.tudominio.com/api/v1/health/ready`, esperado `200`.
+- `GET https://app.tudominio.com/status`, esperado `200`.
+- Intervalo recomendado: 1–5 minutos.
+- Alertas a dos personas responsables y un canal operativo.
+
+No uses una comprobación desde el mismo servidor de Vercel como único monitor:
+el objetivo es detectar también problemas de red, DNS o proveedor.
+
+## Backup y restauración
+
+Antes de la primera migración de producción crea un backup descargable y
+registra fecha, proyecto, commit y migración aplicada. Desde `pos-saas-infra`:
+
+```powershell
+New-Item -ItemType Directory -Force backups | Out-Null
+npm.cmd exec -- supabase db dump --linked --file backups/production-YYYYMMDD.sql
+```
+
+Guarda el archivo fuera del repositorio y prueba la restauración en un proyecto
+Supabase desechable, nunca directamente en producción. Con una cadena de
+conexión de restauración ya percent-encoded:
+
+```powershell
+psql "$env:RESTORE_DATABASE_URL" --file backups/production-YYYYMMDD.sql
+```
+
+La prueba sólo cuenta como backup válido si se puede restaurar y consultar el
+esquema y los datos esenciales.
+
 ## Rollback
 
-Para código, vuelve al commit anterior mediante el mecanismo de rollback del
-proveedor y conserva el commit fallido. Para base de datos, no borres una
-migración aplicada manualmente: restaura el backup sólo si es necesario y
-coordina cualquier corrección mediante una nueva migración hacia adelante.
+Para código:
+
+1. Identifica el último commit/deployment estable.
+2. Usa `Redeploy` o `Rollback` en Vercel para API y web.
+3. Conserva el commit fallido y registra la causa.
+
+Para base de datos, no borres ni edites una migración ya aplicada. Si es una
+corrección compatible, publica una nueva migración hacia adelante. Si existe
+pérdida o corrupción de datos, detén escrituras, restaura el backup probado en
+un proyecto de recuperación y coordina el cambio antes de reemplazar la base
+de producción.

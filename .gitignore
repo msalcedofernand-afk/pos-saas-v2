@@ -12,6 +12,7 @@
 **/.env.local
 **/.env.*.local
 !.env.example
+**/backups/
 
 # Logs and local tooling
 **/*.log

@@ -182,6 +182,11 @@ test.describe("operaciones autenticadas", () => {
       const foreignOrders = (await foreignOrdersResponse.json()).data as Array<{ id: string }>;
       expect(foreignOrders.some((foreignOrder) => foreignOrder.id === orderId)).toBe(false);
 
+      const invalidOrganizationResponse = await request.get(`${apiUrl}/api/v1/products`, {
+        headers: { "X-Organization-Id": "00000000-0000-0000-0000-000000000999" },
+      });
+      expect([403, 404]).toContain(invalidOrganizationResponse.status());
+
       const crossOrganizationOrder = await request.post(
         `${apiUrl}/api/v1/orders`,
         scopedIdempotentCsrfOptions(actor.data.csrfToken, targetOrganization!.id, {

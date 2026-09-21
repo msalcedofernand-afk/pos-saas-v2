@@ -1,6 +1,8 @@
 name: Authenticated web E2E
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -39,6 +41,24 @@ jobs:
               exit 1
             fi
           done
+      - name: Wait for staging deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          api_url="${PLAYWRIGHT_API_URL%/}"
+          web_url="${PLAYWRIGHT_BASE_URL%/}"
+          for attempt in $(seq 1 30); do
+            api_status=$(curl --location --silent --show-error --output /tmp/api-ready.json --write-out "%{http_code}" --max-time 20 "$api_url/api/v1/health/ready" || true)
+            web_status=$(curl --location --silent --show-error --output /tmp/web-status.html --write-out "%{http_code}" --max-time 20 "$web_url/status" || true)
+            if [ "$api_status" = "200" ] && [ "$web_status" = "200" ]; then
+              echo "Staging está disponible. API=$api_status Web=$web_status"
+              exit 0
+            fi
+            echo "Esperando staging (intento $attempt/30). API=$api_status Web=$web_status"
+            sleep 20
+          done
+          echo "Staging no estuvo disponible dentro del tiempo esperado"
+          exit 1
       - uses: actions/setup-node@v5
         with:
           node-version: 24
