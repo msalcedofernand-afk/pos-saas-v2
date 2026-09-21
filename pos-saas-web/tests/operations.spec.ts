@@ -33,22 +33,49 @@ function idempotentCsrfOptions(csrfToken: string, data?: unknown) {
   return { data, headers: { "X-CSRF-Token": csrfToken, "Idempotency-Key": crypto.randomUUID() } };
 }
 
-async function createTestProduct(adminApi: APIRequestContext, csrfToken: string) {
+type TestProduct = { id: string; createdCategoryId?: string };
+
+async function createTestProduct(adminApi: APIRequestContext, csrfToken: string): Promise<TestProduct> {
   const categoriesResponse = await adminApi.get(`${apiUrl}/api/v1/categories`);
+  expect(categoriesResponse.status(), await categoriesResponse.text()).toBe(200);
   const categories = (await categoriesResponse.json()).data as { id: string }[];
-  expect(categories.length).toBeGreaterThan(0);
+  let categoryId = categories[0]?.id;
+  let createdCategoryId: string | undefined;
+
+  if (!categoryId) {
+    const categoryResponse = await adminApi.post(
+      `${apiUrl}/api/v1/categories`,
+      csrfOptions(csrfToken, { name: `E2E categoría ${Date.now()}`, sortOrder: 0 }),
+    );
+    expect(categoryResponse.status(), await categoryResponse.text()).toBe(201);
+    createdCategoryId = ((await categoryResponse.json()).data as { id: string }).id;
+    categoryId = createdCategoryId;
+  }
+
   const response = await adminApi.post(
     `${apiUrl}/api/v1/products`,
     csrfOptions(csrfToken, {
-      categoryId: categories[0].id,
+      categoryId,
       name: `E2E producto ${Date.now()}`,
       price: 9.9,
       isAvailable: true,
       prepTimeMinutes: 5,
     }),
   );
-  expect(response.status(), await response.text()).toBe(201);
-  return (await response.json()).data as { id: string };
+  try {
+    expect(response.status(), await response.text()).toBe(201);
+    return { ...((await response.json()).data as { id: string }), createdCategoryId };
+  } catch (error) {
+    if (createdCategoryId)
+      await adminApi.delete(`${apiUrl}/api/v1/categories/${createdCategoryId}`, csrfOptions(csrfToken));
+    throw error;
+  }
+}
+
+async function cleanupTestProduct(adminApi: APIRequestContext, csrfToken: string, product: TestProduct) {
+  await adminApi.delete(`${apiUrl}/api/v1/products/${product.id}`, csrfOptions(csrfToken));
+  if (product.createdCategoryId)
+    await adminApi.delete(`${apiUrl}/api/v1/categories/${product.createdCategoryId}`, csrfOptions(csrfToken));
 }
 
 async function createTestOrder(actorApi: APIRequestContext, productId: string, csrfToken: string) {
@@ -102,18 +129,16 @@ test.describe("operaciones autenticadas", () => {
   test("creación y limpieza de productos", async () => {
     requireOrSkip(configured, "Configura E2E_ADMIN_EMAIL y E2E_ADMIN_PASSWORD para preparar productos");
     const adminApi = await requestContext.newContext();
-    let productId: string | undefined;
+    let product: TestProduct | undefined;
     let adminCsrfToken: string | undefined;
     try {
       const result = await login(adminApi, adminCredentials);
       adminCsrfToken = result.data.csrfToken;
       requireOrSkip(result.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
-      const product = await createTestProduct(adminApi, result.data.csrfToken);
-      productId = product.id;
-      expect(productId).toBeTruthy();
+      product = await createTestProduct(adminApi, result.data.csrfToken);
+      expect(product.id).toBeTruthy();
     } finally {
-      if (productId && adminCsrfToken)
-        await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`, csrfOptions(adminCsrfToken));
+      if (product && adminCsrfToken) await cleanupTestProduct(adminApi, adminCsrfToken, product);
       await adminApi.dispose();
     }
   });
@@ -121,7 +146,7 @@ test.describe("operaciones autenticadas", () => {
   test("creación de pedidos", async ({ request }) => {
     requireOrSkip(configured, "Configura E2E_EMAIL, E2E_PASSWORD y credenciales admin para preparar productos");
     const adminApi = await requestContext.newContext();
-    let productId: string | undefined;
+    let product: TestProduct | undefined;
     let orderId: string | undefined;
     let adminCsrfToken: string | undefined;
     let actorCsrfToken: string | undefined;
@@ -129,22 +154,21 @@ test.describe("operaciones autenticadas", () => {
       const admin = await login(adminApi, adminCredentials);
       adminCsrfToken = admin.data.csrfToken;
       requireOrSkip(admin.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
-      productId = (await createTestProduct(adminApi, admin.data.csrfToken)).id;
+      product = await createTestProduct(adminApi, admin.data.csrfToken);
       const actor = await login(request, actorCredentials);
       actorCsrfToken = actor.data.csrfToken;
       requireOrSkip(
         actor.data.user.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)),
         "La cuenta E2E no puede crear pedidos",
       );
-      orderId = (await createTestOrder(request, productId, actor.data.csrfToken)).id;
+      orderId = (await createTestOrder(request, product.id, actor.data.csrfToken)).id;
       expect(orderId).toBeTruthy();
     } finally {
       if (orderId && actorCsrfToken)
         await request
           .patch(`${apiUrl}/api/v1/orders/${orderId}/status`, csrfOptions(actorCsrfToken, { status: "cancelled" }))
           .catch(() => undefined);
-      if (productId && adminCsrfToken)
-        await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`, csrfOptions(adminCsrfToken));
+      if (product && adminCsrfToken) await cleanupTestProduct(adminApi, adminCsrfToken, product);
       await adminApi.dispose();
     }
   });
@@ -152,7 +176,7 @@ test.describe("operaciones autenticadas", () => {
   test("cancelación de pedidos", async ({ request }) => {
     requireOrSkip(configured, "Configura E2E_EMAIL, E2E_PASSWORD y credenciales admin para preparar productos");
     const adminApi = await requestContext.newContext();
-    let productId: string | undefined;
+    let product: TestProduct | undefined;
     let orderId: string | undefined;
     let adminCsrfToken: string | undefined;
     let actorCsrfToken: string | undefined;
@@ -160,14 +184,14 @@ test.describe("operaciones autenticadas", () => {
       const admin = await login(adminApi, adminCredentials);
       adminCsrfToken = admin.data.csrfToken;
       requireOrSkip(admin.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
-      productId = (await createTestProduct(adminApi, admin.data.csrfToken)).id;
+      product = await createTestProduct(adminApi, admin.data.csrfToken);
       const actor = await login(request, actorCredentials);
       actorCsrfToken = actor.data.csrfToken;
       requireOrSkip(
         actor.data.user.roles.some((role) => ["admin", "cashier", "waiter"].includes(role)),
         "La cuenta E2E no puede cancelar pedidos",
       );
-      orderId = await createTestOrder(request, productId, actor.data.csrfToken).then((order) => order.id);
+      orderId = await createTestOrder(request, product.id, actor.data.csrfToken).then((order) => order.id);
       const cancelled = await request.patch(
         `${apiUrl}/api/v1/orders/${orderId}/status`,
         csrfOptions(actor.data.csrfToken, { status: "cancelled" }),
@@ -178,8 +202,7 @@ test.describe("operaciones autenticadas", () => {
         await request
           .patch(`${apiUrl}/api/v1/orders/${orderId}/status`, csrfOptions(actorCsrfToken, { status: "cancelled" }))
           .catch(() => undefined);
-      if (productId && adminCsrfToken)
-        await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`, csrfOptions(adminCsrfToken));
+      if (product && adminCsrfToken) await cleanupTestProduct(adminApi, adminCsrfToken, product);
       await adminApi.dispose();
     }
   });
@@ -217,15 +240,15 @@ test.describe("operaciones autenticadas", () => {
   test("cambio de estados en cocina", async ({ request }) => {
     requireOrSkip(configured, "Configura E2E_ADMIN_EMAIL y E2E_ADMIN_PASSWORD para preparar productos");
     const adminApi = await requestContext.newContext();
-    let productId: string | undefined;
+    let product: TestProduct | undefined;
     let orderId: string | undefined;
     let adminCsrfToken: string | undefined;
     try {
       const admin = await login(adminApi, adminCredentials);
       adminCsrfToken = admin.data.csrfToken;
       requireOrSkip(admin.data.user.roles.includes("admin"), "E2E_ADMIN_EMAIL debe tener rol admin");
-      productId = (await createTestProduct(adminApi, admin.data.csrfToken)).id;
-      orderId = await createTestOrder(adminApi, productId, admin.data.csrfToken).then((order) => order.id);
+      product = await createTestProduct(adminApi, admin.data.csrfToken);
+      orderId = await createTestOrder(adminApi, product.id, admin.data.csrfToken).then((order) => order.id);
       for (const status of ["preparing", "ready", "served"]) {
         const response = await adminApi.patch(
           `${apiUrl}/api/v1/kitchen/orders/${orderId}/status`,
@@ -234,8 +257,7 @@ test.describe("operaciones autenticadas", () => {
         expect(response.status(), await response.text()).toBe(200);
       }
     } finally {
-      if (productId && adminCsrfToken)
-        await adminApi.delete(`${apiUrl}/api/v1/products/${productId}`, csrfOptions(adminCsrfToken));
+      if (product && adminCsrfToken) await cleanupTestProduct(adminApi, adminCsrfToken, product);
       await adminApi.dispose();
     }
   });

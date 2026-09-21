@@ -4,9 +4,7 @@ const apiOrigin = new URL(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3
 
 function buildCsp(nonce?: string) {
   const scriptSource =
-    process.env.NODE_ENV === "production"
-      ? `'self' 'nonce-${nonce}'`
-      : "'self' 'unsafe-inline' 'unsafe-eval'";
+    process.env.NODE_ENV === "production" ? `'self' 'nonce-${nonce}'` : "'self' 'unsafe-inline' 'unsafe-eval'";
 
   return [
     "default-src 'self'",
