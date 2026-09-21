@@ -21,3 +21,6 @@ Thumbs.db
 
 # Legacy project is intentionally kept outside POS SaaS V2
 /pos-saas-main/
+
+.vercel
+.env*
