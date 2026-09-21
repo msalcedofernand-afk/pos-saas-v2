@@ -17,11 +17,11 @@ export async function POST(request: NextRequest) {
     const body = bodySchema.parse(await request.json());
     const idempotencyKey = getIdempotencyKey(request);
     if (!idempotencyKey) return apiError("Falta el header Idempotency-Key", 400);
-    const db = createAdminClient() as any;
+    const db = createAdminClient();
     const { data: rawResult, error } = await db.rpc("close_cash_shift_idempotent", {
       p_user_id: auth.user.id,
       p_closing_amount: body.closingAmount,
-      p_difference_reason: body.differenceReason ?? null,
+      p_difference_reason: body.differenceReason ?? "",
       p_idempotency_key: idempotencyKey,
       p_request_hash: hashIdempotencyPayload(body),
     });

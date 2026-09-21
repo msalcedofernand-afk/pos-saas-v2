@@ -16,12 +16,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (auth.response) return auth.response;
     const id = idSchema.parse((await params).id);
     const body = bodySchema.parse(await request.json());
-    const db = createAdminClient() as any;
+    const db = createAdminClient();
     const { data, error } = await db.rpc("transition_order_status_transaction", {
       p_order_id: id,
       p_user_id: auth.user.id,
       p_status: body.status,
-      p_reason: body.reason ?? null,
+      p_reason: body.reason,
     });
     if (error) {
       return rpcApiError(error, "No se pudo actualizar el pedido");

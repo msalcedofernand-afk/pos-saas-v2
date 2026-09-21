@@ -20,14 +20,14 @@ export async function POST(request: NextRequest) {
     const body = bodySchema.parse(await request.json());
     const idempotencyKey = getIdempotencyKey(request);
     if (!idempotencyKey) return apiError("Falta el header Idempotency-Key", 400);
-    const db = createAdminClient() as any;
+    const db = createAdminClient();
     const { data: rawResult, error } = await db.rpc("register_payment_transaction_idempotent", {
       p_order_id: body.orderId,
       p_user_id: auth.user.id,
       p_method: body.method,
       p_amount: body.amount,
       p_received_amount: body.receivedAmount ?? body.amount,
-      p_reference: body.reference ?? null,
+      p_reference: body.reference ?? "",
       p_idempotency_key: idempotencyKey,
       p_request_hash: hashIdempotencyPayload(body),
     });
