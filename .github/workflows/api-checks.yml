@@ -138,6 +138,9 @@ jobs:
         with:
           name: supabase-test-db-log
           path: ${{ runner.temp }}/supabase-test-db.log
+      - name: Run concurrency checks
+        run: bash scripts/test-concurrency.sh
+        working-directory: pos-saas-infra
       - name: Run database lint
         if: always()
         run: supabase db lint --local
