@@ -37,6 +37,5 @@ npm run dev
 
 - Web: `http://localhost:3001`
 - API: `http://localhost:3000`
-- Demo de diseños V2: `http://localhost:3001/demo`
 
 Las variables reales deben mantenerse en archivos `.env.local` y nunca subirse al repositorio.
