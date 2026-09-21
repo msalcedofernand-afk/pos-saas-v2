@@ -82,3 +82,7 @@ Los pares de texto y fondo se verificarán con contraste WCAG AA. Se mantendrá 
 ## Fallback
 
 Si la dirección visual no funciona en una pantalla operativa, se conserva el layout actual y se revierte únicamente la capa de estilos de esa pantalla. No se cambia la lógica ni se migran componentes de forma masiva.
+
+## Rediseño estructural 2.0
+
+La segunda iteración reemplaza la composición plana de páginas por un shell de aplicación con sidebar persistente en escritorio, navegación agrupada por Operación, Catálogo y Control, topbar contextual, estado del sistema y acción rápida de nuevo pedido. En móvil, la navegación se convierte en un drawer accesible. Las páginas internas existentes se mantienen como contenido operativo dentro de este shell, preservando sus contratos de datos y sus flujos.

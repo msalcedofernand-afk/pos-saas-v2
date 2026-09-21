@@ -622,3 +622,82 @@ body { background: var(--soft); color: var(--ink); }
   .payment-method label { align-items: flex-start; flex-direction: column; }
   .payment-method select { width: 100%; }
 }
+
+/* Turno claro 2.0 — structural application shell */
+.app-shell {
+  background: var(--soft);
+  display: flex;
+  min-height: 100dvh;
+}
+.app-sidebar {
+  background: #172333;
+  color: #d7dee8;
+  display: flex;
+  flex: 0 0 244px;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding: 24px 14px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.app-sidebar-head { padding: 0 12px 30px; }
+.app-wordmark { color: #fff; font-size: 20px; font-weight: 800; letter-spacing: -0.05em; }
+.app-sidebar-caption { color: #8290a3; display: block; font-size: 11px; margin-top: 6px; }
+.app-nav { display: grid; gap: 24px; }
+.app-nav-group { display: grid; gap: 4px; }
+.app-nav-label { color: #718198; font-size: 10px; font-weight: 800; letter-spacing: .13em; padding: 0 12px 6px; text-transform: uppercase; }
+.app-nav-link { align-items: center; border: 1px solid transparent; border-radius: 10px; color: #aeb9c8; display: flex; font-size: 13px; font-weight: 650; gap: 10px; min-height: 42px; padding: 7px 10px; transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease; }
+.app-nav-link:hover { background: rgba(255, 255, 255, .06); color: #fff; }
+.app-nav-link.active { background: rgba(124, 92, 219, .2); border-color: rgba(168, 148, 239, .22); color: #fff; }
+.app-nav-glyph { align-items: center; background: rgba(255, 255, 255, .07); border-radius: 6px; color: #9daabd; display: inline-flex; font-size: 9px; font-weight: 800; height: 25px; justify-content: center; letter-spacing: .03em; width: 25px; }
+.app-nav-link.active .app-nav-glyph { background: var(--brand); color: #fff; }
+.app-sidebar-foot { border-top: 1px solid rgba(255, 255, 255, .09); margin-top: auto; padding: 16px 12px 0; }
+.app-status-link { align-items: center; color: #9daabd; display: flex; font-size: 11px; gap: 8px; }
+.app-status-dot { background: #4ade80; border-radius: 999px; box-shadow: 0 0 0 3px rgba(74, 222, 128, .12); height: 7px; width: 7px; }
+.app-main { min-width: 0; width: 100%; }
+.app-topbar { align-items: center; background: rgba(255, 255, 255, .92); border-bottom: 1px solid var(--line); display: flex; gap: 18px; height: 68px; padding: 0 32px; position: sticky; top: 0; z-index: 20; }
+.app-breadcrumb { align-items: center; display: flex; font-size: 12px; gap: 9px; min-width: 0; }
+.app-breadcrumb span { color: var(--muted); }
+.app-breadcrumb b { color: #c2c8d1; font-weight: 500; }
+.app-breadcrumb strong { color: var(--ink); font-weight: 750; }
+.app-topbar-actions { align-items: center; display: flex; gap: 16px; margin-left: auto; }
+.app-quick-action { align-items: center; background: var(--brand); border-radius: 8px; box-shadow: 0 4px 10px rgba(124, 92, 219, .18); color: #fff; display: inline-flex; font-size: 12px; font-weight: 750; gap: 6px; min-height: 38px; padding: 0 12px; }
+.app-quick-action:hover { background: var(--brand-dark); }
+.app-quick-action span { font-size: 18px; font-weight: 400; line-height: 0; }
+.app-live-status { align-items: center; color: var(--muted); display: inline-flex; font-size: 11px; gap: 7px; white-space: nowrap; }
+.app-live-status i { background: #22c55e; border-radius: 999px; height: 7px; width: 7px; }
+.app-menu-button, .app-shell-scrim { display: none; }
+.app-content { min-width: 0; padding: 0 32px 44px; }
+.app-content > .shell { max-width: 1360px; padding-left: 0; padding-right: 0; }
+.app-content > .shell > .compact-nav { display: none; }
+.app-content .module-page-heading { margin-top: 30px; }
+.app-content .dashboard-topbar { margin-top: 18px; }
+.app-content .dashboard-welcome { padding-top: 28px; }
+.app-content .kitchen-shell { padding-left: 0; padding-right: 0; }
+.app-content .kitchen-topbar { display: none; }
+.app-content .kitchen-live-heading { margin-top: 30px; }
+.app-content .kitchen-opening { margin-top: 12vh; }
+.app-content .orders-shell { padding-top: 0; }
+.app-content .module-shell { padding-top: 0; }
+
+@media (max-width: 900px) {
+  .app-sidebar { flex-basis: 220px; }
+  .app-topbar { padding: 0 22px; }
+  .app-content { padding: 0 22px 36px; }
+}
+@media (max-width: 760px) {
+  .app-sidebar { bottom: 0; box-shadow: 18px 0 50px rgba(16, 24, 40, .22); left: 0; position: fixed; transform: translateX(-102%); transition: transform 180ms ease; width: min(82vw, 280px); }
+  .app-shell-menu-open .app-sidebar { transform: translateX(0); }
+  .app-shell-menu-open .app-shell-scrim { background: rgba(16, 24, 40, .45); display: block; inset: 0; position: fixed; z-index: 25; }
+  .app-menu-button { background: transparent; border: 0; display: grid; gap: 4px; padding: 8px 4px; }
+  .app-menu-button span { background: var(--ink); border-radius: 2px; display: block; height: 2px; width: 20px; }
+  .app-topbar { gap: 12px; height: 60px; padding: 0 16px; }
+  .app-breadcrumb span, .app-breadcrumb b { display: none; }
+  .app-topbar-actions { gap: 9px; }
+  .app-live-status { display: none; }
+  .app-quick-action { font-size: 11px; min-height: 36px; padding: 0 9px; }
+  .app-content { padding: 0 16px 28px; }
+  .app-content .dashboard-topbar { margin-top: 12px; }
+  .app-content .dashboard-welcome { padding-top: 24px; }
+}
