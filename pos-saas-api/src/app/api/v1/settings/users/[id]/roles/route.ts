@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
-import { handleApiError } from "@/lib/api/response";
+import { handleApiError, rpcApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const idSchema = z.string().uuid();
@@ -14,14 +14,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const userId = idSchema.parse((await params).id);
     const body = bodySchema.parse(await request.json());
     const db = createAdminClient() as any;
-    const { error: membershipDeleteError } = await db.from("organization_members").delete().eq("organization_id", auth.user.organizationId).eq("user_id", userId);
-    if (membershipDeleteError) throw membershipDeleteError;
-    if (body.roleIds.length > 0) {
-      const { error: membershipInsertError } = await db.from("organization_members").insert(body.roleIds.map((roleId, index) => ({ organization_id: auth.user.organizationId, user_id: userId, role_id: roleId, is_default: index === 0 })));
-      if (membershipInsertError) throw membershipInsertError;
-    }
-    await db.from("audit_logs").insert({ organization_id: auth.user.organizationId, user_id: auth.user.id, action: "update_user_roles", auditable_type: "users", auditable_id: userId, new_values: { role_ids: body.roleIds } });
-    return NextResponse.json({ data: { userId, roleIds: body.roleIds } });
+    const { data, error } = await db.rpc("update_organization_member_roles_transaction", {
+      p_actor_user_id: auth.user.id,
+      p_target_user_id: userId,
+      p_organization_id: auth.user.organizationId,
+      p_role_ids: body.roleIds,
+    });
+    if (error) return rpcApiError(error, "No se pudieron actualizar los roles");
+    return NextResponse.json({ data });
   } catch (error) {
     return handleApiError(error);
   }
