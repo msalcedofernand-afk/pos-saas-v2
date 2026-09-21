@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "supabase": "supabase"
+    "supabase": "supabase",
+    "preflight:api": "node scripts/preflight-production.mjs --surface api",
+    "preflight:web": "node scripts/preflight-production.mjs --surface web",
+    "preflight:production": "node scripts/preflight-production.mjs --surface all"
   },
   "engines": {
     "node": ">=20"

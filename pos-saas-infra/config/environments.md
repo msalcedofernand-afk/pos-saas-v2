@@ -7,8 +7,7 @@ La API es el único proyecto que recibe credenciales privadas:
 ```text
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-SUPABASE_SERVICE_ROLE_KEY
-STORE_DEVICE_SETUP_KEY
+SUPABASE_SECRET_KEY
 WEB_ORIGIN=http://localhost:3001
 AUTH_COOKIE_SAME_SITE=lax
 AUTH_COOKIE_SECURE=false
@@ -26,7 +25,7 @@ Puedes verificar el preflight desplegado con PowerShell:
   -WebOrigin https://app.tudominio.com
 ```
 
-Aunque la URL y la clave publishable tengan el prefijo `NEXT_PUBLIC`, en esta arquitectura sólo se usan dentro de la API. La `SUPABASE_SERVICE_ROLE_KEY`, `STORE_DEVICE_SETUP_KEY` y tokens de integraciones nunca salen del servidor.
+Aunque la URL y la clave publishable tengan el prefijo `NEXT_PUBLIC`, en esta arquitectura sólo se usan dentro de la API. La `SUPABASE_SECRET_KEY` y tokens de integraciones nunca salen del servidor.
 
 ## Web
 
