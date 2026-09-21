@@ -51,7 +51,7 @@ jobs:
         working-directory: pos-saas-infra
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.117.0
       - name: Start Postgres-only Supabase stack
         run: |
           cp supabase/config.toml "$RUNNER_TEMP/supabase-config.toml"
