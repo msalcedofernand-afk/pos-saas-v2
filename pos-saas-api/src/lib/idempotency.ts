@@ -22,7 +22,9 @@ function canonicalize(value: unknown): unknown {
 }
 
 export function hashIdempotencyPayload(payload: unknown): string {
-  return createHash("sha256").update(JSON.stringify(canonicalize(payload))).digest("hex");
+  return createHash("sha256")
+    .update(JSON.stringify(canonicalize(payload)))
+    .digest("hex");
 }
 
 export function parseIdempotentResult<T>(value: unknown): T {

@@ -10,14 +10,8 @@ const paymentMigrationUrl = new URL(
   "../../pos-saas-infra/supabase/migrations/20260920210208_cash_method_reconciliation.sql",
   import.meta.url,
 );
-const orderRouteUrl = new URL(
-  "../src/app/api/v1/orders/[id]/status/route.ts",
-  import.meta.url,
-);
-const kitchenRouteUrl = new URL(
-  "../src/app/api/v1/kitchen/orders/[id]/status/route.ts",
-  import.meta.url,
-);
+const orderRouteUrl = new URL("../src/app/api/v1/orders/[id]/status/route.ts", import.meta.url);
+const kitchenRouteUrl = new URL("../src/app/api/v1/kitchen/orders/[id]/status/route.ts", import.meta.url);
 
 test("la migración conserva las invariantes críticas de pedidos y caja", async () => {
   const migration = await readFile(migrationUrl, "utf8");

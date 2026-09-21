@@ -22,7 +22,13 @@ export interface ProductInput {
 }
 
 export interface ProductRepository {
-  list(filters: { search?: string; categoryId?: string; available?: boolean; page: number; limit: number }): Promise<{ data: ProductRecord[]; total: number | null }>;
+  list(filters: {
+    search?: string;
+    categoryId?: string;
+    available?: boolean;
+    page: number;
+    limit: number;
+  }): Promise<{ data: ProductRecord[]; total: number | null }>;
   create(input: ProductInput): Promise<ProductRecord>;
   update(id: string, input: Partial<ProductInput>): Promise<ProductRecord>;
   remove(id: string): Promise<void>;

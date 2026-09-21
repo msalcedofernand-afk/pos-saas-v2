@@ -4,7 +4,7 @@ import { ZodError } from "zod";
 export function apiError(message: string, status: number, details?: unknown) {
   return NextResponse.json(
     { error: { code: status >= 500 ? "INTERNAL_ERROR" : "REQUEST_ERROR", message, details } },
-    { status }
+    { status },
   );
 }
 

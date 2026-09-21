@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
     const supabase = createAdminClient();
     const { data, error, count } = await supabase
       .from("orders")
-      .select(`
+      .select(
+        `
         id,
         table_id,
         status,
@@ -43,14 +44,18 @@ export async function GET(request: NextRequest) {
             categories(id, name)
           )
         )
-      `)
+      `,
+      )
       .eq("organization_id", auth.user.organizationId)
       .in("status", activeStatuses)
       .order("created_at", { ascending: true })
       .range(from, to);
 
     if (error) throw error;
-    return NextResponse.json({ data: data ?? [], meta: { page: queryParams.page, limit: queryParams.limit, total: count ?? 0, hasMore: (count ?? 0) > to + 1 } });
+    return NextResponse.json({
+      data: data ?? [],
+      meta: { page: queryParams.page, limit: queryParams.limit, total: count ?? 0, hasMore: (count ?? 0) > to + 1 },
+    });
   } catch (error) {
     return handleApiError(error);
   }

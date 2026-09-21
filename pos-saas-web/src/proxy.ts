@@ -1,13 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const apiOrigin = new URL(
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000",
-).origin;
+const apiOrigin = new URL(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").origin;
 
 function buildCsp(nonce?: string) {
-  const scriptSource = process.env.NODE_ENV === "production"
-    ? `'self' 'nonce-${nonce}' 'strict-dynamic'`
-    : "'self' 'unsafe-inline' 'unsafe-eval'";
+  const scriptSource =
+    process.env.NODE_ENV === "production"
+      ? `'self' 'nonce-${nonce}' 'strict-dynamic'`
+      : "'self' 'unsafe-inline' 'unsafe-eval'";
 
   return [
     "default-src 'self'",
@@ -38,7 +37,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };

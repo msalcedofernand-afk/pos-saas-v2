@@ -22,11 +22,13 @@ test("rutas SEO públicas están disponibles", async ({ request }) => {
 });
 
 test("dashboard solicita autenticación", async ({ page }) => {
-  await page.route("**/api/v1/auth/me", (route) => route.fulfill({
-    status: 401,
-    contentType: "application/json",
-    body: JSON.stringify({ error: { message: "No autenticado" } }),
-  }));
+  await page.route("**/api/v1/auth/me", (route) =>
+    route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ error: { message: "No autenticado" } }),
+    }),
+  );
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login/);
 });

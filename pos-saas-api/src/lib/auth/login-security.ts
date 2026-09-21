@@ -15,7 +15,7 @@ function numericEnv(name: string, fallback: number) {
 }
 
 function firstRow<T>(data: T | T[] | null): T | null {
-  return Array.isArray(data) ? data[0] ?? null : data;
+  return Array.isArray(data) ? (data[0] ?? null) : data;
 }
 
 function hashRateKey(prefix: string, value: string) {
@@ -50,10 +50,7 @@ async function getUserIdByEmail(email: string) {
   return (data as { id: string } | null)?.id ?? null;
 }
 
-async function callRateLimitFunction(
-  functionName: string,
-  args: Record<string, unknown>,
-) {
+async function callRateLimitFunction(functionName: string, args: Record<string, unknown>) {
   const adminClient = createAdminClient();
   const { data, error } = await (adminClient as any).rpc(functionName, args);
   if (error) throw error;
@@ -84,13 +81,12 @@ export async function checkLoginSecurity(request: Request, email: string) {
       p_window_seconds: config.windowSeconds,
       p_lock_seconds: config.lockSeconds,
     }),
-    userId
-      ? callRateLimitFunction("check_user_login_lock", { p_user_id: userId })
-      : Promise.resolve(null),
+    userId ? callRateLimitFunction("check_user_login_lock", { p_user_id: userId }) : Promise.resolve(null),
   ]);
 
-  const retries = [retryAfter(emailLimit), retryAfter(ipLimit), retryAfter(userLock)]
-    .filter((value): value is number => value !== undefined);
+  const retries = [retryAfter(emailLimit), retryAfter(ipLimit), retryAfter(userLock)].filter(
+    (value): value is number => value !== undefined,
+  );
   return {
     emailKey,
     ipKey,
@@ -126,8 +122,9 @@ export async function recordLoginFailure(context: Awaited<ReturnType<typeof chec
       : Promise.resolve(null),
   ]);
 
-  const retries = [retryAfter(emailLimit), retryAfter(ipLimit), retryAfter(userLock)]
-    .filter((value): value is number => value !== undefined);
+  const retries = [retryAfter(emailLimit), retryAfter(ipLimit), retryAfter(userLock)].filter(
+    (value): value is number => value !== undefined,
+  );
   return {
     blocked: emailLimit?.blocked === true || ipLimit?.blocked === true || userLock?.blocked === true,
     retryAfter: retries.length ? Math.max(...retries) : undefined,

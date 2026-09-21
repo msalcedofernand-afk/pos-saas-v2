@@ -13,7 +13,8 @@ export async function updateSession(request: NextRequest) {
 
   const supabaseResponse = NextResponse.next({ request });
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabasePublishableKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // Permite mostrar las pantallas públicas en instalaciones aún no configuradas.
   // Las rutas API protegidas no se consideran disponibles sin credenciales.
@@ -21,32 +22,28 @@ export async function updateSession(request: NextRequest) {
     if (isApiRoute) {
       return NextResponse.json(
         { error: { code: "SUPABASE_NOT_CONFIGURED", message: "La API no está configurada" } },
-        { status: 503 }
+        { status: 503 },
       );
     }
     return supabaseResponse;
   }
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabasePublishableKey,
-    {
-      cookieOptions: getAuthCookieOptions(),
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, {
-              ...options,
-              ...getAuthCookieOptions(),
-            })
-          );
-        },
+  const supabase = createServerClient(supabaseUrl, supabasePublishableKey, {
+    cookieOptions: getAuthCookieOptions(),
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, {
+            ...options,
+            ...getAuthCookieOptions(),
+          }),
+        );
+      },
+    },
+  });
 
   const {
     data: { user },

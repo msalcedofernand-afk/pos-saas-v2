@@ -35,7 +35,10 @@ export async function POST(request: NextRequest) {
     const result = parseIdempotentResult<{ payment?: Record<string, unknown>; replayed?: boolean }>(rawResult);
     const payment = result.payment;
     if (!payment) return apiError("No se pudo registrar el pago", 500);
-    return NextResponse.json({ data: payment, meta: { replayed: result.replayed === true } }, { status: result.replayed ? 200 : 201 });
+    return NextResponse.json(
+      { data: payment, meta: { replayed: result.replayed === true } },
+      { status: result.replayed ? 200 : 201 },
+    );
   } catch (error) {
     return handleApiError(error);
   }

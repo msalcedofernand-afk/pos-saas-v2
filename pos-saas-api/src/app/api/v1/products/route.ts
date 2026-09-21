@@ -9,7 +9,10 @@ export const dynamic = "force-dynamic";
 const querySchema = z.object({
   search: z.string().trim().max(100).optional(),
   categoryId: z.string().uuid().optional(),
-  available: z.enum(["true", "false"]).transform((value) => value === "true").optional(),
+  available: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+    .optional(),
   page: z.coerce.number().int().min(1).max(10000).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
 });
@@ -32,7 +35,10 @@ export async function GET(request: NextRequest) {
     const repository = createSupabaseProductRepository(auth.user.organizationId);
     const result = await repository.list(query);
 
-    return NextResponse.json({ data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } });
+    return NextResponse.json({
+      data: result.data,
+      meta: { page: query.page, limit: query.limit, total: result.total },
+    });
   } catch (error) {
     return handleApiError(error);
   }

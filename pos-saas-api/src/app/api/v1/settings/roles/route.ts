@@ -7,7 +7,10 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await authenticateApiRequest(request, ["admin"]);
     if (auth.response) return auth.response;
-    const { data, error } = await (createAdminClient() as any).from("roles").select("id, name, display_name").order("name");
+    const { data, error } = await (createAdminClient() as any)
+      .from("roles")
+      .select("id, name, display_name")
+      .order("name");
     if (error) throw error;
     return NextResponse.json({ data: data ?? [] });
   } catch (error) {

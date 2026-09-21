@@ -10,10 +10,7 @@ const bodySchema = z.object({
   reason: z.string().trim().max(500).optional(),
 });
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await authenticateApiRequest(request, ["admin", "kitchen"]);
     if (auth.response) return auth.response;

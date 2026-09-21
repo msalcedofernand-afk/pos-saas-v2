@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "lint": "eslint . --max-warnings=0",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx,mjs}\"",
     "typecheck": "tsc --noEmit",
     "test": "node --test"
   },
@@ -22,6 +24,9 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.3.5",
+    "prettier": "^3.6.0",
     "typescript": "^5"
   }
 }

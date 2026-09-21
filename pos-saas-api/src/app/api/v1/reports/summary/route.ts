@@ -7,12 +7,17 @@ import { businessDate, businessDayRange, isValidBusinessDate } from "@/lib/date/
 
 export const dynamic = "force-dynamic";
 
-const querySchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-}).refine(({ date }) => !date || isValidBusinessDate(date), {
-  path: ["date"],
-  message: "La fecha no existe",
-});
+const querySchema = z
+  .object({
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+  })
+  .refine(({ date }) => !date || isValidBusinessDate(date), {
+    path: ["date"],
+    message: "La fecha no existe",
+  });
 
 export async function GET(request: NextRequest) {
   try {

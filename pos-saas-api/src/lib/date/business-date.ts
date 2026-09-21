@@ -1,5 +1,4 @@
-const businessTimezone =
-  process.env.NEXT_PUBLIC_BUSINESS_TIMEZONE ?? "America/Lima";
+const businessTimezone = process.env.NEXT_PUBLIC_BUSINESS_TIMEZONE ?? "America/Lima";
 
 function timeZoneOffsetMinutes(date: Date) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -48,7 +47,9 @@ export function businessDateOffset(offsetDays: number) {
     day: "numeric",
   }).formatToParts(new Date());
   const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
-  return businessDate(new Date(Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day) + offsetDays, 12)));
+  return businessDate(
+    new Date(Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day) + offsetDays, 12)),
+  );
 }
 
 export function businessDayRange(date: string) {

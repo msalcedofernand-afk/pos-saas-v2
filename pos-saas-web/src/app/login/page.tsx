@@ -41,13 +41,30 @@ export default function LoginPage() {
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
             Correo electrónico
-            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required />
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              required
+            />
           </label>
           <label>
             Contraseña
-            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" minLength={8} required />
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              minLength={8}
+              required
+            />
           </label>
-          {error && <p className="form-error" role="alert">{error}</p>}
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
           <button className="button button-primary" type="submit" disabled={loading}>
             {loading ? "Ingresando..." : "Ingresar"}
           </button>

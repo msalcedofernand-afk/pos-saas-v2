@@ -8,9 +8,7 @@ export function createSupabaseProductRepository(organizationId: string): Product
 
   return {
     async list({ search, categoryId, available, page, limit }) {
-      let query = (db as any)
-        .from("products")
-        .select("*, categories(name)", { count: "exact" });
+      let query = (db as any).from("products").select("*, categories(name)", { count: "exact" });
       query = query.eq("organization_id", organizationId);
 
       const safeSearch = search?.replace(/[\\%_,()]/g, " ").trim();
@@ -19,9 +17,7 @@ export function createSupabaseProductRepository(organizationId: string): Product
       if (available !== undefined) query = query.eq("is_available", available);
 
       const from = (page - 1) * limit;
-      const { data, count, error } = await query
-        .order("name", { ascending: true })
-        .range(from, from + limit - 1);
+      const { data, count, error } = await query.order("name", { ascending: true }).range(from, from + limit - 1);
 
       if (error) throw error;
       return { data: (data ?? []) as ProductRecord[], total: count };

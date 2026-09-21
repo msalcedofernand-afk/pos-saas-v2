@@ -4,7 +4,13 @@ import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError, rpcApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const bodySchema = z.object({ inventoryItemId: z.string().uuid(), type: z.enum(["in", "out", "adjustment"]), quantity: z.number().finite().positive(), unitCost: z.number().finite().min(0).default(0), description: z.string().trim().max(300).optional() });
+const bodySchema = z.object({
+  inventoryItemId: z.string().uuid(),
+  type: z.enum(["in", "out", "adjustment"]),
+  quantity: z.number().finite().positive(),
+  unitCost: z.number().finite().min(0).default(0),
+  description: z.string().trim().max(300).optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {

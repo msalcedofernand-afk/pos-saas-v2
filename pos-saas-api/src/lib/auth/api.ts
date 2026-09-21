@@ -58,7 +58,8 @@ export async function authenticateApiRequest(request: Request, allowedRoles?: re
 
   if (authorization?.match(/^Bearer\s+\S+$/i)) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const publishableKey =
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const secretKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!url || !publishableKey || !secretKey) {
@@ -71,9 +72,7 @@ export async function authenticateApiRequest(request: Request, allowedRoles?: re
         url,
         publishableKeys: { default: publishableKey },
         secretKeys: { default: secretKey },
-        jwks: new URL(
-          process.env.SUPABASE_JWKS_URL ?? `${url}/auth/v1/.well-known/jwks.json`,
-        ),
+        jwks: new URL(process.env.SUPABASE_JWKS_URL ?? `${url}/auth/v1/.well-known/jwks.json`),
       },
     });
 

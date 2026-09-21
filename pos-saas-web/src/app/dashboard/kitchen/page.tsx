@@ -127,9 +127,11 @@ export default function KitchenPage() {
 
   const stations = useMemo(() => {
     const names = new Set<string>();
-    orders.forEach((order) => order.order_items.forEach((item) => {
-      if (item.product?.categories?.name) names.add(item.product.categories.name);
-    }));
+    orders.forEach((order) =>
+      order.order_items.forEach((item) => {
+        if (item.product?.categories?.name) names.add(item.product.categories.name);
+      }),
+    );
     return [...names].sort();
   }, [orders]);
 
@@ -153,7 +155,11 @@ export default function KitchenPage() {
     await document.documentElement.requestFullscreen();
   }
 
-  async function updateStatus(order: KitchenOrder, status: "preparing" | "ready" | "served" | "cancelled", reason?: string) {
+  async function updateStatus(
+    order: KitchenOrder,
+    status: "preparing" | "ready" | "served" | "cancelled",
+    reason?: string,
+  ) {
     if (status === "cancelled" && !reason?.trim()) return;
     setUpdatingId(order.id);
     try {
@@ -176,11 +182,15 @@ export default function KitchenPage() {
 
   return (
     <main className={`shell kitchen-shell ${isFullscreen ? "kitchen-fullscreen" : ""}`}>
-      {!isFullscreen && <nav className="kitchen-topbar">
-        <Link className="kitchen-back" href="/dashboard">← Panel</Link>
-        <strong>Cocina</strong>
-        <span className={isOpen ? "kitchen-status open" : "kitchen-status"}>{isOpen ? "Abierta" : "Cerrada"}</span>
-      </nav>}
+      {!isFullscreen && (
+        <nav className="kitchen-topbar">
+          <Link className="kitchen-back" href="/dashboard">
+            ← Panel
+          </Link>
+          <strong>Cocina</strong>
+          <span className={isOpen ? "kitchen-status open" : "kitchen-status"}>{isOpen ? "Abierta" : "Cerrada"}</span>
+        </nav>
+      )}
 
       {!isOpen ? (
         <section className="kitchen-opening">
@@ -188,43 +198,201 @@ export default function KitchenPage() {
           <h1>Resumen anterior</h1>
           <p>Revisa el turno anterior y abre la cocina cuando estés listo para recibir comandas.</p>
           <div className="kitchen-summary-grid">
-            <div><strong>{summary?.orders ?? 0}</strong><span>Pedidos</span></div>
-            <div><strong>{summary?.served ?? 0}</strong><span>Atendidos</span></div>
-            <div><strong>{summary?.cancelled ?? 0}</strong><span>Cancelados</span></div>
+            <div>
+              <strong>{summary?.orders ?? 0}</strong>
+              <span>Pedidos</span>
+            </div>
+            <div>
+              <strong>{summary?.served ?? 0}</strong>
+              <span>Atendidos</span>
+            </div>
+            <div>
+              <strong>{summary?.cancelled ?? 0}</strong>
+              <span>Cancelados</span>
+            </div>
           </div>
           <small className="kitchen-summary-date">Resumen del {summary?.date ?? yesterday}</small>
-          <button className="button button-primary kitchen-open-button" onClick={openKitchen}>Abrir cocina</button>
+          <button className="button button-primary kitchen-open-button" onClick={openKitchen}>
+            Abrir cocina
+          </button>
         </section>
       ) : (
         <>
-          {!isFullscreen && <div className="kitchen-live-heading">
-            <div><div className="eyebrow">Jornada actual · {today}</div><h1>Comandas</h1></div>
-            <div className="kitchen-live-actions"><span>Actualización cada 15 s</span><button className="button button-small" onClick={() => void loadOrders()}>Actualizar</button><button className="button button-small" onClick={() => void toggleFullscreen()}>{isFullscreen ? "Salir" : "Pantalla completa"}</button><button className="button button-small" onClick={closeKitchen}>Cerrar</button></div>
-          </div>}
-          {!isFullscreen && <div className="kitchen-filters">
-            <button className={station === "all" ? "kitchen-filter active" : "kitchen-filter"} onClick={() => setStation("all")}>Todas</button>
-            {stations.map((name) => <button className={station === name ? "kitchen-filter active" : "kitchen-filter"} key={name} onClick={() => setStation(name)}>{name}</button>)}
-          </div>}
+          {!isFullscreen && (
+            <div className="kitchen-live-heading">
+              <div>
+                <div className="eyebrow">Jornada actual · {today}</div>
+                <h1>Comandas</h1>
+              </div>
+              <div className="kitchen-live-actions">
+                <span>Actualización cada 15 s</span>
+                <button className="button button-small" onClick={() => void loadOrders()}>
+                  Actualizar
+                </button>
+                <button className="button button-small" onClick={() => void toggleFullscreen()}>
+                  {isFullscreen ? "Salir" : "Pantalla completa"}
+                </button>
+                <button className="button button-small" onClick={closeKitchen}>
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          )}
+          {!isFullscreen && (
+            <div className="kitchen-filters">
+              <button
+                className={station === "all" ? "kitchen-filter active" : "kitchen-filter"}
+                onClick={() => setStation("all")}
+              >
+                Todas
+              </button>
+              {stations.map((name) => (
+                <button
+                  className={station === name ? "kitchen-filter active" : "kitchen-filter"}
+                  key={name}
+                  onClick={() => setStation(name)}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
           {error && <p className="form-error">{error}</p>}
-          {loading ? <p className="empty-state">Cargando comandas...</p> : (
+          {loading ? (
+            <p className="empty-state">Cargando comandas...</p>
+          ) : (
             <div className="kitchen-board">
               {columns.map((column) => {
-                const columnOrders = orders.filter((order) => column.statuses.includes(order.status) && visibleItems(order).length > 0);
-                return <section className="kitchen-column" key={column.key}><div className="kitchen-column-heading"><h2>{column.label}</h2><span>{columnOrders.length}</span></div><div className="kitchen-column-body">
-                  {columnOrders.length === 0 ? <div className="kitchen-empty">No hay pedidos</div> : columnOrders.map((order) => {
-                    const busy = updatingId === order.id;
-                    return <article className={isWarning(order, now) ? "kitchen-card warning" : "kitchen-card"} key={order.id}>
-                      <header className="kitchen-card-header"><div><strong>{order.table?.name ?? "Para llevar"}</strong><small>#{order.id.slice(-6).toUpperCase()}</small></div><span className="kitchen-timer">{elapsedSince(order, now)}</span></header>
-                      {order.notes && <p className="kitchen-note">{order.notes}</p>}
-                      <ul className="kitchen-items">{visibleItems(order).map((item) => <li key={item.id}><div><strong>{item.product?.name ?? "Producto"}</strong>{item.notes && <small>{item.notes}</small>}</div><b>x{item.quantity}</b></li>)}</ul>
-                      <div className="kitchen-actions">{column.key === "new" && <><button className="button button-primary" disabled={busy} onClick={() => void updateStatus(order, "preparing")}>Empezar</button><button className="button button-danger" disabled={busy} onClick={() => { setCancelOrder(order); setCancelReason(""); }}>Rechazar</button></>}{column.key === "preparing" && <button className="button button-primary" disabled={busy} onClick={() => void updateStatus(order, "ready")}>{busy ? "Guardando..." : "Marcar listo"}</button>}{column.key === "ready" && <button className="button button-success" disabled={busy} onClick={() => void updateStatus(order, "served")}>{busy ? "Guardando..." : "Entregar"}</button>}</div>
-                    </article>;
-                  })}
-                </div></section>;
+                const columnOrders = orders.filter(
+                  (order) => column.statuses.includes(order.status) && visibleItems(order).length > 0,
+                );
+                return (
+                  <section className="kitchen-column" key={column.key}>
+                    <div className="kitchen-column-heading">
+                      <h2>{column.label}</h2>
+                      <span>{columnOrders.length}</span>
+                    </div>
+                    <div className="kitchen-column-body">
+                      {columnOrders.length === 0 ? (
+                        <div className="kitchen-empty">No hay pedidos</div>
+                      ) : (
+                        columnOrders.map((order) => {
+                          const busy = updatingId === order.id;
+                          return (
+                            <article
+                              className={isWarning(order, now) ? "kitchen-card warning" : "kitchen-card"}
+                              key={order.id}
+                            >
+                              <header className="kitchen-card-header">
+                                <div>
+                                  <strong>{order.table?.name ?? "Para llevar"}</strong>
+                                  <small>#{order.id.slice(-6).toUpperCase()}</small>
+                                </div>
+                                <span className="kitchen-timer">{elapsedSince(order, now)}</span>
+                              </header>
+                              {order.notes && <p className="kitchen-note">{order.notes}</p>}
+                              <ul className="kitchen-items">
+                                {visibleItems(order).map((item) => (
+                                  <li key={item.id}>
+                                    <div>
+                                      <strong>{item.product?.name ?? "Producto"}</strong>
+                                      {item.notes && <small>{item.notes}</small>}
+                                    </div>
+                                    <b>x{item.quantity}</b>
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="kitchen-actions">
+                                {column.key === "new" && (
+                                  <>
+                                    <button
+                                      className="button button-primary"
+                                      disabled={busy}
+                                      onClick={() => void updateStatus(order, "preparing")}
+                                    >
+                                      Empezar
+                                    </button>
+                                    <button
+                                      className="button button-danger"
+                                      disabled={busy}
+                                      onClick={() => {
+                                        setCancelOrder(order);
+                                        setCancelReason("");
+                                      }}
+                                    >
+                                      Rechazar
+                                    </button>
+                                  </>
+                                )}
+                                {column.key === "preparing" && (
+                                  <button
+                                    className="button button-primary"
+                                    disabled={busy}
+                                    onClick={() => void updateStatus(order, "ready")}
+                                  >
+                                    {busy ? "Guardando..." : "Marcar listo"}
+                                  </button>
+                                )}
+                                {column.key === "ready" && (
+                                  <button
+                                    className="button button-success"
+                                    disabled={busy}
+                                    onClick={() => void updateStatus(order, "served")}
+                                  >
+                                    {busy ? "Guardando..." : "Entregar"}
+                                  </button>
+                                )}
+                              </div>
+                            </article>
+                          );
+                        })
+                      )}
+                    </div>
+                  </section>
+                );
               })}
             </div>
           )}
-          {cancelOrder && <div className="modal-backdrop"><section className="product-modal"><div className="modal-heading"><div><div className="eyebrow">Incidencia</div><h2>Rechazar pedido</h2></div><button className="modal-close" onClick={() => setCancelOrder(null)}>×</button></div><p className="empty-state">Indica por qué no se puede preparar el pedido.</p><label>Motivo<textarea autoFocus rows={3} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} /></label><div className="modal-actions"><button className="button button-secondary" onClick={() => setCancelOrder(null)}>Cancelar</button><button className="button button-danger" disabled={!cancelReason.trim() || updatingId === cancelOrder.id} onClick={() => { void updateStatus(cancelOrder, "cancelled", cancelReason.trim()); setCancelOrder(null); }}>Rechazar pedido</button></div></section></div>}
+          {cancelOrder && (
+            <div className="modal-backdrop">
+              <section className="product-modal">
+                <div className="modal-heading">
+                  <div>
+                    <div className="eyebrow">Incidencia</div>
+                    <h2>Rechazar pedido</h2>
+                  </div>
+                  <button className="modal-close" onClick={() => setCancelOrder(null)}>
+                    ×
+                  </button>
+                </div>
+                <p className="empty-state">Indica por qué no se puede preparar el pedido.</p>
+                <label>
+                  Motivo
+                  <textarea
+                    autoFocus
+                    rows={3}
+                    value={cancelReason}
+                    onChange={(event) => setCancelReason(event.target.value)}
+                  />
+                </label>
+                <div className="modal-actions">
+                  <button className="button button-secondary" onClick={() => setCancelOrder(null)}>
+                    Cancelar
+                  </button>
+                  <button
+                    className="button button-danger"
+                    disabled={!cancelReason.trim() || updatingId === cancelOrder.id}
+                    onClick={() => {
+                      void updateStatus(cancelOrder, "cancelled", cancelReason.trim());
+                      setCancelOrder(null);
+                    }}
+                  >
+                    Rechazar pedido
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
         </>
       )}
     </main>

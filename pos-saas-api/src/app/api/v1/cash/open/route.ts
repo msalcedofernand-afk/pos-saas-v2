@@ -21,10 +21,17 @@ export async function POST(request: NextRequest) {
       p_idempotency_key: idempotencyKey,
       p_request_hash: hashIdempotencyPayload(body),
     });
-    if (error) return apiError(error.code === "23505" ? "Ya tienes una caja abierta" : "No se pudo abrir caja", error.code === "23505" ? 409 : 409);
+    if (error)
+      return apiError(
+        error.code === "23505" ? "Ya tienes una caja abierta" : "No se pudo abrir caja",
+        error.code === "23505" ? 409 : 409,
+      );
     const result = parseIdempotentResult<{ shift?: Record<string, unknown>; replayed?: boolean }>(rawResult);
     if (!result.shift) return apiError("No se pudo abrir caja", 500);
-    return NextResponse.json({ data: result.shift, meta: { replayed: result.replayed === true } }, { status: result.replayed ? 200 : 201 });
+    return NextResponse.json(
+      { data: result.shift, meta: { replayed: result.replayed === true } },
+      { status: result.replayed ? 200 : 201 },
+    );
   } catch (error) {
     return handleApiError(error);
   }
