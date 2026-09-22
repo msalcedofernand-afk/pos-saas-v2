@@ -10,6 +10,7 @@ Nueva base del POS SaaS, separada del proyecto legacy.
 
 ## Documentación operativa
 
+- [Guía completa de operación, autenticación, plataforma y troubleshooting](docs/OPERATIONS_GUIDE.md).
 - [Guía de despliegue, health checks, monitoreo, backup y rollback](DEPLOYMENT.md).
 - [Matriz de validación en frontend, API y base de datos](VALIDATION.md).
 - [Política de seguridad y reporte de incidentes](SECURITY.md).
