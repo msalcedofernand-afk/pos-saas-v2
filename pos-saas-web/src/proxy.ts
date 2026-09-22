@@ -2,9 +2,21 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const apiOrigin = new URL(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").origin;
 
+function getSupabaseOrigin() {
+  const configuredUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!configuredUrl) return null;
+
+  try {
+    return new URL(configuredUrl).origin;
+  } catch {
+    return null;
+  }
+}
+
 function buildCsp(nonce?: string) {
   const scriptSource =
     process.env.NODE_ENV === "production" ? `'self' 'nonce-${nonce}'` : "'self' 'unsafe-inline' 'unsafe-eval'";
+  const connectSources = ["'self'", apiOrigin, getSupabaseOrigin()].filter(Boolean).join(" ");
 
   return [
     "default-src 'self'",
@@ -15,7 +27,7 @@ function buildCsp(nonce?: string) {
     "font-src 'self' data:",
     "style-src 'self' 'unsafe-inline'",
     `script-src ${scriptSource}`,
-    `connect-src 'self' ${apiOrigin}`,
+    `connect-src ${connectSources}`,
   ].join("; ");
 }
 
