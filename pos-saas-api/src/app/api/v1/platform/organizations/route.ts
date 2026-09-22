@@ -32,8 +32,17 @@ class ProvisioningError extends Error {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["platform_admin"]);
+    const auth = await authenticateApiRequest(request, ["platform_admin", "support_agent"]);
     if (auth.response) return auth.response;
+    if (!auth.user.roles.some((role) => ["platform_owner", "platform_admin"].includes(role))) {
+      const { data, error } = await createAdminClient()
+        .from("organizations")
+        .select("id, name, slug, status")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return NextResponse.json({ data });
+    }
 
     const search = request.nextUrl.searchParams.get("search")?.trim().slice(0, 80) ?? "";
     const status = request.nextUrl.searchParams.get("status")?.trim() ?? "";

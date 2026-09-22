@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-test("la raíz pública dirige al login", async ({ page }) => {
+test("la presentación conecta registro e inicio de sesión", async ({ page }) => {
   await page.goto("/");
-  await expect(page).toHaveURL(/\/login/);
-  await expect(page).toHaveTitle(/Iniciar sesión/);
-  await expect(page.locator("h1")).toContainText("Iniciar sesión");
+  await expect(page.locator("h1")).toContainText("Tu restaurante");
+  await page.getByRole("link", { name: "Crear cuenta", exact: true }).click();
+  await expect(page).toHaveURL(/\/register$/);
+  await expect(page.getByLabel("Contraseña", { exact: true })).toBeVisible();
 });
 
 test("rutas SEO públicas están disponibles", async ({ request }) => {

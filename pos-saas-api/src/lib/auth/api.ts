@@ -12,6 +12,7 @@ import {
   type ActiveSupportAccess,
 } from "@/lib/platform/support-access";
 import type { Database } from "@/types/database";
+import { isGlobalRole, tenantRoles } from "@/lib/auth/roles";
 
 export interface ApiUser {
   id: string;
@@ -56,7 +57,7 @@ export async function getGlobalUserRoles(userId: string) {
   return ((data ?? []) as unknown as Array<{ roles: { name: string } | { name: string }[] | null }>)
     .flatMap((row) => (Array.isArray(row.roles) ? row.roles : row.roles ? [row.roles] : []))
     .map((role) => role.name)
-    .filter(Boolean);
+    .filter(isGlobalRole);
 }
 
 /**
@@ -122,7 +123,7 @@ export async function getUserMembership(userId: string, requestedOrganizationId?
     .filter((row) => row.organization_id === organizationId)
     .flatMap((row) => (Array.isArray(row.roles) ? row.roles : row.roles ? [row.roles] : []))
     .map((role) => role.name)
-    .filter(Boolean) as string[];
+    .filter((role) => (tenantRoles as readonly string[]).includes(role)) as string[];
 
   return { organizationId, roles };
 }
@@ -229,7 +230,10 @@ export async function authenticateApiRequest(
   }
 
   const globalRoles = await getGlobalUserRoles(user.id);
-  const isPlatformAdmin = globalRoles.includes("platform_admin");
+  const isPlatformAdmin = globalRoles.some((role) =>
+    ["platform_admin", "platform_owner", "support_agent"].includes(role),
+  );
+  const isPlatformStaff = globalRoles.some(isGlobalRole);
   let membership = null;
   let supportAccess: ActiveSupportAccess | null = null;
   const supportControlRequest = new URL(request.url).pathname.startsWith("/api/v1/platform/support/access");
@@ -265,7 +269,7 @@ export async function authenticateApiRequest(
     membership = await getUserMembership(user.id, requestedOrganizationId);
   }
 
-  if (!membership && !isPlatformAdmin) {
+  if (!membership && !isPlatformStaff) {
     return { user: null, response: apiError("Usuario sin organización asignada", 403) } as const;
   }
   if (options.requireOrganization && !membership) {
@@ -277,7 +281,23 @@ export async function authenticateApiRequest(
 
   const roles = [...new Set([...globalRoles, ...(membership?.roles ?? [])])];
 
-  if (allowedRoles && !roles.some((role) => allowedRoles.includes(role) || role === "platform_admin")) {
+  const ownerOnly = allowedRoles?.length === 1 && allowedRoles[0] === "platform_owner";
+  const managerOperation =
+    options.requireOrganization &&
+    !new URL(request.url).pathname.startsWith("/api/v1/settings/") &&
+    roles.includes("manager") &&
+    allowedRoles?.includes("admin");
+  const allowed =
+    managerOperation ||
+    roles.some(
+      (role) => allowedRoles?.includes(role) || role === "platform_owner" || (!ownerOnly && role === "platform_admin"),
+    );
+  const supportRead =
+    supportAccess &&
+    roles.includes("support_agent") &&
+    ["GET", "HEAD"].includes(request.method) &&
+    options.requireOrganization;
+  if (allowedRoles && !allowed && !supportRead) {
     return { user: null, response: apiError("Permisos insuficientes", 403) } as const;
   }
 

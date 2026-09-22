@@ -10,7 +10,7 @@ const revokeSchema = z.object({ reason: z.string().trim().min(5).max(500) });
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await authenticateApiRequest(request, ["platform_admin"]);
+    const auth = await authenticateApiRequest(request, ["platform_admin", "support_agent"]);
     if (auth.response) return auth.response;
     const idempotencyKey = getIdempotencyKey(request);
     if (!idempotencyKey || idempotencyKey.length < 16) {

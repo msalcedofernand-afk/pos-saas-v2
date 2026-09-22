@@ -197,11 +197,19 @@ export default function OrganizationDetailPage() {
 
         <section className="panel-section">
           <div className="eyebrow">Estado operativo</div>
-          <h2>{organization.status === "active" ? "Organización disponible" : "Operación suspendida"}</h2>
+          <h2>
+            {organization.status === "pending"
+              ? "Solicitud pendiente de aprobación"
+              : organization.status === "active"
+                ? "Organización disponible"
+                : "Operación suspendida"}
+          </h2>
           <p className="muted-copy">
-            {organization.status === "active"
-              ? "Los usuarios pueden iniciar sesión y operar pedidos, cocina, caja e inventario."
-              : `Suspendida ${formatDate(organization.suspended_at)}. ${organization.suspension_reason ?? ""}`}
+            {organization.status === "pending"
+              ? "Revisa la solicitud para habilitar el acceso de este restaurante al piloto gratuito."
+              : organization.status === "active"
+                ? "Los usuarios pueden iniciar sesión y operar pedidos, cocina, caja e inventario."
+                : `Suspendida ${formatDate(organization.suspended_at)}. ${organization.suspension_reason ?? ""}`}
           </p>
           {organization.status === "active" ? (
             <div className="organization-action-form">
@@ -225,7 +233,7 @@ export default function OrganizationDetailPage() {
               onClick={() => void changeStatus("reactivate")}
               type="button"
             >
-              Reactivar organización
+              {organization.status === "pending" ? "Aprobar restaurante" : "Reactivar organización"}
             </button>
           )}
         </section>

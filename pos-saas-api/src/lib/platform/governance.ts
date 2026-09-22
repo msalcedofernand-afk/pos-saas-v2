@@ -10,7 +10,7 @@ export const platformGovernanceRoles = [
 ] as const;
 
 export function hasGovernanceRole(roles: string[], allowed: readonly string[]) {
-  return roles.some((role) => role === "platform_admin" || allowed.includes(role));
+  return roles.some((role) => role === "platform_owner" || role === "platform_admin" || allowed.includes(role));
 }
 
 export async function writePlatformAudit(

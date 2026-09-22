@@ -22,7 +22,7 @@ const rpcClient = createAdminClient as unknown as () => {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["platform_admin"]);
+    const auth = await authenticateApiRequest(request, ["platform_admin", "support_agent"]);
     if (auth.response) return auth.response;
     await expireSupportAccessSessions();
     const { data, error } = await createAdminClient()
@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
       .select(
         "id, actor_user_id, organization_id, reason, duration_minutes, mode, status, requested_at, starts_at, expires_at, entered_at, write_enabled_at, revoked_at, revoke_reason, organizations(id, name, slug, status)",
       )
+      .eq("actor_user_id", auth.user.id)
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) throw error;
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["platform_admin"]);
+    const auth = await authenticateApiRequest(request, ["platform_admin", "support_agent"]);
     if (auth.response) return auth.response;
     const idempotencyKey = getIdempotencyKey(request);
     if (!idempotencyKey || idempotencyKey.length < 16) return apiError("Falta un header Idempotency-Key válido", 400);

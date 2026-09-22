@@ -5,6 +5,7 @@ import { ensureConfiguredPlatformAdmin, getGlobalUserRoles, getUserAccess, getUs
 import { apiError, handleApiError } from "@/lib/api/response";
 import { checkLoginSecurity, recordLoginFailure, resetLoginSecurity } from "@/lib/auth/login-security";
 import { getOrCreateCsrfToken, setCsrfCookie } from "@/lib/security/csrf";
+import { isGlobalRole } from "@/lib/auth/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -48,9 +49,10 @@ export async function POST(request: NextRequest) {
     await ensureConfiguredPlatformAdmin(data.user.id, data.user.email);
     const globalRoles = await getGlobalUserRoles(data.user.id);
     const membership = await getUserMembership(data.user.id);
-    if (!membership && !globalRoles.includes("platform_admin")) {
-      await supabase.auth.signOut();
-      return apiError("Usuario sin organización asignada", 403);
+    if (!membership && !globalRoles.some(isGlobalRole)) {
+      await resetLoginSecurity(securityContext);
+      const csrfToken = getOrCreateCsrfToken(request);
+      return setCsrfCookie(NextResponse.json({ data: { roles: globalRoles, onboarding: true, csrfToken } }), csrfToken);
     }
     await resetLoginSecurity(securityContext);
     const csrfToken = getOrCreateCsrfToken(request);

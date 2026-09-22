@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { handleApiError } from "@/lib/api/response";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { tenantRoles } from "@/lib/auth/roles";
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,7 +10,9 @@ export async function GET(request: NextRequest) {
     if (auth.response) return auth.response;
     const { data, error } = await createAdminClient().from("roles").select("id, name, display_name").order("name");
     if (error) throw error;
-    return NextResponse.json({ data: (data ?? []).filter((role) => role.name !== "platform_admin") });
+    return NextResponse.json({
+      data: (data ?? []).filter((role) => (tenantRoles as readonly string[]).includes(role.name)),
+    });
   } catch (error) {
     return handleApiError(error);
   }

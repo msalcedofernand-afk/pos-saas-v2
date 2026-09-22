@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api/client";
+import { InviteWorker } from "@/components/InviteWorker";
 
 type Role = { id: string; name: string; display_name: string };
 type UserRole = { role_id: string; roles: Role };
@@ -88,6 +89,7 @@ export default function SettingsPage() {
         </button>
       </div>
       {error && <p className="form-error">{error}</p>}
+      <InviteWorker />
       <section className="settings-layout">
         <div className="panel-section">
           <div className="section-heading">

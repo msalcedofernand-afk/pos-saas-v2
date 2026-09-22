@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
       response.headers.set("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
       response.headers.set(
         "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, X-CSRF-Token, Idempotency-Key",
+        "Content-Type, Authorization, X-CSRF-Token, Idempotency-Key, X-Organization-Id, X-Support-Access-Id",
       );
     }
     addVaryOrigin(response);

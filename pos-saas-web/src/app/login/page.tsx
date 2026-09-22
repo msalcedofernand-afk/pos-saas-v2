@@ -18,6 +18,10 @@ export default function LoginPage() {
     const recoveryHash = window.location.hash;
     const hashParams = new URLSearchParams(recoveryHash.replace(/^#/, ""));
     const authType = hashParams.get("type");
+    if (authType === "signup") {
+      router.replace(`/register/restaurant${recoveryHash}`);
+      return;
+    }
     const isRecoveryFlow =
       authType === "recovery" ||
       authType === "invite" ||
@@ -41,12 +45,22 @@ export default function LoginPage() {
       const response = await apiFetch<{
         data: {
           roles?: string[];
+          onboarding?: boolean;
         };
       }>("/api/v1/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
-      const destination = response.data.roles?.includes("platform_admin") ? "/dashboard/platform" : "/dashboard";
+      const roles = response.data.roles ?? [];
+      const destination = response.data.onboarding
+        ? "/register/restaurant"
+        : roles.some((role) => ["platform_owner", "platform_admin"].includes(role))
+          ? "/dashboard/platform"
+          : roles.includes("support_agent")
+            ? "/dashboard/platform/support"
+            : roles.some((role) => ["billing_admin", "security_auditor"].includes(role))
+              ? "/dashboard/platform/incidents"
+              : "/dashboard";
       router.replace(destination);
       router.refresh();
     } catch (cause) {
@@ -105,6 +119,12 @@ export default function LoginPage() {
           </button>
           <Link className="link-button" href="/login/forgot-password">
             ¿Olvidaste tu contraseña?
+          </Link>
+          <Link className="link-button" href="/register">
+            Crear cuenta
+          </Link>
+          <Link className="link-button" href="/">
+            Conocer Mesa Clara
           </Link>
         </form>
       </section>

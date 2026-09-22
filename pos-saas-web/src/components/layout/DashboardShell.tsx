@@ -20,6 +20,18 @@ const navigation = [
   { label: "Inventario", href: "/dashboard/inventory", section: "Catálogo" },
   { label: "Reportes", href: "/dashboard/reports", section: "Control" },
   { label: "Configuración", href: "/dashboard/settings", section: "Control" },
+  { label: "Plan y límites", href: "/dashboard/subscription", section: "Control" },
+];
+
+const platformNavigation = [
+  { label: "Organizaciones", href: "/dashboard/platform", section: "Plataforma" },
+  { label: "Usuarios", href: "/dashboard/platform/users", section: "Plataforma" },
+  { label: "Accesos globales", href: "/dashboard/platform/access", section: "Plataforma" },
+  { label: "Soporte", href: "/dashboard/platform/support", section: "Plataforma" },
+  { label: "Tickets", href: "/dashboard/platform/tickets", section: "Plataforma" },
+  { label: "Incidentes", href: "/dashboard/platform/incidents", section: "Plataforma" },
+  { label: "Planes", href: "/dashboard/platform/plans", section: "Plataforma" },
+  { label: "Auditoría", href: "/dashboard/platform/audit", section: "Plataforma" },
 ];
 
 const pageNames = new Map(navigation.map((item) => [item.href, item.label]));
@@ -30,11 +42,27 @@ export function DashboardShell({ children }: Readonly<{ children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
   const [platformContext, setPlatformContext] = useState<PlatformOrganizationContext | null>(null);
   const [revokingSupport, setRevokingSupport] = useState(false);
-  const currentLabel = pageNames.get(pathname) ?? "Panel operativo";
-  const sections = [...new Set(navigation.map((item) => item.section))];
+  const [globalRoles, setGlobalRoles] = useState<string[]>([]);
+  const isPlatform = pathname.startsWith("/dashboard/platform");
+  const links = isPlatform
+    ? platformNavigation.filter((item) => {
+        if (item.href.endsWith("/access")) return globalRoles.includes("platform_owner");
+        if (globalRoles.some((role) => ["platform_owner", "platform_admin"].includes(role))) return true;
+        if (globalRoles.includes("support_agent")) return ["Soporte", "Tickets", "Incidentes"].includes(item.label);
+        return item.label === "Incidentes";
+      })
+    : navigation;
+  const currentLabel =
+    links.find((item) => item.href === pathname)?.label ?? pageNames.get(pathname) ?? "Panel operativo";
+  const sections = [...new Set(links.map((item) => item.section))];
 
   useEffect(() => {
     setPlatformContext(getPlatformOrganizationContext());
+    if (pathname.startsWith("/dashboard/platform")) {
+      void apiFetch<{ data: { user: { roles: string[] } } }>("/api/v1/auth/me")
+        .then((response) => setGlobalRoles(response.data.user.roles))
+        .catch(() => setGlobalRoles([]));
+    }
   }, [pathname]);
 
   async function leaveOrganizationContext() {
@@ -69,13 +97,15 @@ export function DashboardShell({ children }: Readonly<{ children: React.ReactNod
           <Link className="app-wordmark" href="/dashboard" onClick={() => setMobileOpen(false)}>
             {brand.name}
           </Link>
-          <span className="app-sidebar-caption">Operación de restaurante</span>
+          <span className="app-sidebar-caption">
+            {isPlatform ? "Administración de plataforma" : "Operación de restaurante"}
+          </span>
         </div>
         <nav className="app-nav">
           {sections.map((section) => (
             <div className="app-nav-group" key={section}>
               <span className="app-nav-label">{section}</span>
-              {navigation
+              {links
                 .filter((item) => item.section === section)
                 .map((item) => {
                   const active =
@@ -124,8 +154,8 @@ export function DashboardShell({ children }: Readonly<{ children: React.ReactNod
             <strong>{currentLabel}</strong>
           </div>
           <div className="app-topbar-actions">
-            <Link className="app-quick-action" href="/dashboard/orders">
-              <span aria-hidden="true">+</span> Nuevo pedido
+            <Link className="app-quick-action" href={isPlatform ? "/dashboard/platform/support" : "/dashboard/orders"}>
+              {isPlatform ? "Soporte temporal" : "+ Nuevo pedido"}
             </Link>
             <span className="app-live-status">
               <i /> Sistema operativo

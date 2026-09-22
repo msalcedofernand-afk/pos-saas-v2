@@ -76,8 +76,12 @@ export function useDashboardMetrics() {
         const user = currentSession.data.user;
         setSession(user);
 
-        if (user.roles.includes("platform_admin")) {
+        if (!user.organizationId && user.roles.some((role) => ["platform_admin", "platform_owner"].includes(role))) {
           router.replace("/dashboard/platform");
+          return;
+        }
+        if (!user.organizationId && user.roles.includes("support_agent")) {
+          router.replace("/dashboard/platform/support");
           return;
         }
 
