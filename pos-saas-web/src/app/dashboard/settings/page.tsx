@@ -73,6 +73,9 @@ export default function SettingsPage() {
           <Link className="button button-small" href="/dashboard">
             Volver
           </Link>
+          <Link className="button button-small" href="/dashboard/subscription">
+            Plan y límites
+          </Link>
         </div>
       </nav>
       <div className="module-page-heading">

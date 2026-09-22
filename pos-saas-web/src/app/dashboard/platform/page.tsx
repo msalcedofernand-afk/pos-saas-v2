@@ -120,6 +120,9 @@ export default function PlatformPage() {
           <Link className="button button-small" href="/dashboard/platform/metrics">
             Métricas
           </Link>
+          <Link className="button button-small" href="/dashboard/platform/plans">
+            Planes y límites
+          </Link>
           <Link className="button button-small" href="/dashboard/platform/support">
             Soporte
           </Link>

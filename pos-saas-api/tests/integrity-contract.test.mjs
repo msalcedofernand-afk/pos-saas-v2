@@ -268,3 +268,50 @@ test("la Fase 5 expone métricas SaaS y errores operativos aislados", async () =
   assert.match(monitoring, /health\/ready/);
   assert.match(monitoring, /HEALTH_ALERT_WEBHOOK_URL/);
 });
+
+test("la Fase 7 centraliza planes, límites y consumo por organización", async () => {
+  const [
+    migration,
+    backfill,
+    platformPlansRoute,
+    subscriptionRoute,
+    tenantSubscriptionRoute,
+    plansPage,
+    subscriptionPage,
+  ] = await Promise.all([
+    readFile(
+      new URL("../../pos-saas-infra/supabase/migrations/20260922160023_phase7_plans_limits_usage.sql", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../../pos-saas-infra/supabase/migrations/20260922160656_phase7_legacy_plan_backfill.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(new URL("../src/app/api/v1/platform/plans/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/api/v1/platform/organizations/[id]/subscription/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/api/v1/subscription/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../pos-saas-web/src/app/dashboard/platform/plans/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../pos-saas-web/src/app/dashboard/subscription/page.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(migration, /CREATE TABLE public\.plans/);
+  assert.match(migration, /CREATE TABLE public\.organization_subscriptions/);
+  assert.match(migration, /CREATE TABLE public\.organization_limits/);
+  assert.match(migration, /CREATE TABLE public\.usage_counters/);
+  assert.match(migration, /get_organization_plan_usage/);
+  assert.match(migration, /set_organization_subscription/);
+  assert.match(migration, /enforce_organization_plan_limit/);
+  assert.match(migration, /organizations_default_plan/);
+  assert.match(migration, /REVOKE ALL ON TABLE public\.plans, public\.organization_subscriptions/);
+  assert.match(backfill, /starter/);
+  assert.match(platformPlansRoute, /authenticateApiRequest\(request, \["platform_admin"\]\)/);
+  assert.match(subscriptionRoute, /set_organization_subscription/);
+  assert.match(subscriptionRoute, /platform_admin/);
+  assert.match(tenantSubscriptionRoute, /requireOrganization: true/);
+  assert.match(tenantSubscriptionRoute, /get_organization_plan_usage/);
+  assert.match(plansPage, /Planes, límites y uso/);
+  assert.match(subscriptionPage, /Plan y límites/);
+});

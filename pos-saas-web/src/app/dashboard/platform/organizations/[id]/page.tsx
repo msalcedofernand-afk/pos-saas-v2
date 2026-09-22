@@ -147,6 +147,9 @@ export default function OrganizationDetailPage() {
         <Link className="button button-small" href="/dashboard/platform">
           Organizaciones
         </Link>
+        <Link className="button button-small" href={`/dashboard/platform/plans?organizationId=${organization.id}`}>
+          Plan y límites
+        </Link>
       </nav>
 
       <div className="module-page-heading">
