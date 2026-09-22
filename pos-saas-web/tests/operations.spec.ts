@@ -146,6 +146,26 @@ test.describe("operaciones autenticadas", () => {
     expect(unblockResponse.status(), await unblockResponse.text()).toBe(200);
   });
 
+  test("auditoría global paginada y detalle de evento", async ({ request }) => {
+    if (!platformCredentials.email || !platformCredentials.password) {
+      test.skip(true, "Configura E2E_PLATFORM_EMAIL y E2E_PLATFORM_PASSWORD");
+      return;
+    }
+    const platform = await login(request, platformCredentials);
+    requireOrSkip(platform.data.roles.includes("platform_admin"), "La cuenta E2E global debe tener platform_admin");
+
+    const auditResponse = await request.get(`${apiUrl}/api/v1/platform/audit?page=1&pageSize=10`);
+    expect(auditResponse.status(), await auditResponse.text()).toBe(200);
+    const audit = (await auditResponse.json()).data as { items: Array<{ id: string }>; total: number; page: number };
+    expect(audit.page).toBe(1);
+    expect(audit.total).toBeGreaterThanOrEqual(0);
+    if (audit.items[0]) {
+      const detailResponse = await request.get(`${apiUrl}/api/v1/platform/audit/${audit.items[0].id}`);
+      expect(detailResponse.status(), await detailResponse.text()).toBe(200);
+      expect((await detailResponse.json()).data.id).toBe(audit.items[0].id);
+    }
+  });
+
   test("cambio explícito de organización", async ({ request }) => {
     requireOrSkip(configured, "Configura E2E_EMAIL y E2E_PASSWORD para probar multi-tenant");
     const result = await login(request, actorCredentials);

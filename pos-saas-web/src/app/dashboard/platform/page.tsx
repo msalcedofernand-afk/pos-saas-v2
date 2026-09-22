@@ -128,6 +128,9 @@ export default function PlatformPage() {
           <Link className="button button-small" href="/dashboard/platform/users">
             Usuarios
           </Link>
+          <Link className="button button-small" href="/dashboard/platform/audit">
+            Auditoría
+          </Link>
           <button className="button button-small" onClick={() => void logout()} type="button">
             Salir
           </button>

@@ -30,3 +30,8 @@ test("dashboard solicita autenticación", async ({ page }) => {
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login/);
 });
+
+test("panel global de auditoría está publicado", async ({ request }) => {
+  const response = await request.get("/dashboard/platform/audit");
+  expect(response.status()).toBe(200);
+});

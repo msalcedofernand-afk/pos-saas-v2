@@ -752,3 +752,29 @@ body { background: var(--soft); color: var(--ink); }
   .organization-facts div, .organization-list > div { align-items: flex-start; flex-direction: column; }
   .organization-list span, .organization-facts dd { text-align: left; }
 }
+
+.audit-filters { margin-top: 20px; }
+.audit-filter-grid { align-items: end; display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; }
+.audit-filter-grid label { display: grid; gap: 6px; }
+.audit-filter-grid select, .audit-filter-grid input { min-height: 42px; }
+.audit-reset { min-height: 42px; }
+.audit-layout { display: grid; gap: 14px; grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr); margin-top: 14px; }
+.audit-list { display: grid; gap: 8px; margin-top: 16px; }
+.audit-event { align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; display: flex; gap: 12px; justify-content: space-between; padding: 13px; text-align: left; width: 100%; }
+.audit-event:hover, .audit-event.selected { border-color: #a5b4fc; box-shadow: 0 5px 16px rgba(79, 70, 229, .08); }
+.audit-event-main { display: grid; gap: 4px; min-width: 0; }
+.audit-event-main small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.audit-event-type { background: #f0edff; border-radius: 999px; color: #5a3fb2; font-size: 11px; padding: 5px 8px; white-space: nowrap; }
+.audit-pagination { align-items: center; display: flex; gap: 12px; justify-content: center; margin-top: 18px; }
+.audit-pagination span { color: var(--muted); font-size: 12px; }
+.audit-detail { align-content: start; display: grid; gap: 12px; }
+.audit-detail h2, .audit-detail h3 { margin: 0; }
+.audit-facts { display: grid; gap: 8px; margin: 0; }
+.audit-facts div { border-bottom: 1px solid var(--line); display: flex; gap: 12px; justify-content: space-between; padding-bottom: 8px; }
+.audit-facts dt { color: var(--muted); font-size: 12px; }
+.audit-facts dd { font-size: 12px; margin: 0; max-width: 70%; overflow-wrap: anywhere; text-align: right; }
+.audit-detail pre { background: #172333; border-radius: 10px; color: #d7dee8; font-size: 11px; margin: 0; max-height: 210px; overflow: auto; padding: 12px; white-space: pre-wrap; }
+
+@media (max-width: 760px) {
+  .audit-filter-grid, .audit-layout { grid-template-columns: 1fr; }
+}

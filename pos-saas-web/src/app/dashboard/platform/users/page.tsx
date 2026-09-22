@@ -181,6 +181,9 @@ export default function PlatformUsersPage() {
           <Link className="button button-small" href="/dashboard/platform">
             Restaurantes
           </Link>
+          <Link className="button button-small" href="/dashboard/platform/audit">
+            Auditoría
+          </Link>
         </div>
       </nav>
 

@@ -2,7 +2,7 @@
 
 Guía funcional y técnica para desarrollar, desplegar y operar el POS SaaS.
 
-> Estado de referencia: Fase 2 en el commit que publique este cambio — 22 de septiembre de 2026.
+> Estado de referencia: Fase 3 en el commit que publique este cambio — 22 de septiembre de 2026.
 
 ## 1. Qué es el sistema
 
@@ -206,7 +206,28 @@ Bloquear actualiza el perfil operativo y aplica una suspensión de Auth desde
 el servidor. Desbloquear revierte ambas condiciones. Las invitaciones no usan
 contraseñas fijas: Supabase Auth envía el enlace.
 
-## 9. Recuperación de contraseña
+## 9. Auditoría global y gobierno administrativo
+
+Desde `/dashboard/platform/audit`, un `platform_admin` puede consultar la
+trazabilidad global de organizaciones, usuarios, roles y membresías. La vista
+permite filtrar por actor, organización, acción y rango de fechas, paginar los
+resultados y abrir el detalle de valores anteriores y nuevos.
+
+Endpoints:
+
+```text
+GET /api/v1/platform/audit
+GET /api/v1/platform/audit/:id
+```
+
+Los parámetros disponibles son `actorUserId`, `organizationId`, `action`,
+`auditableType`, `from`, `to`, `page` y `pageSize`. La API exige
+`platform_admin`; la consulta SQL usa una función de lectura otorgada solo a
+`service_role`, mientras que la tabla permanece sin acceso para `anon` y
+`authenticated`. Los eventos se almacenan en `platform_audit_logs` y no se
+mezclan con la auditoría operativa aislada por restaurante.
+
+## 10. Recuperación de contraseña
 
 Rutas de la web:
 
@@ -225,7 +246,7 @@ Auth. En Supabase configura:
 Los enlaces enviados por el proveedor SMTP integrado tienen un límite bajo. Si
 se supera, espera al restablecimiento del límite o configura SMTP propio.
 
-## 10. API esencial
+## 11. API esencial
 
 ### Salud
 
@@ -289,7 +310,7 @@ DELETE /api/v1/platform/organizations/:id/members/:userId
 Las rutas protegidas requieren cookies de sesión, organización activa y los
 controles de autorización correspondientes.
 
-## 11. Seguridad operativa
+## 12. Seguridad operativa
 
 - No compartas tokens de recuperación ni URLs con `access_token`.
 - Rota la contraseña si un token fue pegado en un chat o ticket.
@@ -301,7 +322,7 @@ controles de autorización correspondientes.
 - Revisa auditoría después de bootstrap y provisioning.
 - Usa SMTP propio antes de abrir el onboarding a más usuarios.
 
-## 12. Desarrollo local
+## 13. Desarrollo local
 
 API:
 
@@ -338,7 +359,7 @@ npm.cmd test
 npm.cmd run build
 ```
 
-## 13. Despliegue
+## 14. Despliegue
 
 1. Confirma que GitHub contiene el commit esperado.
 2. Despliega la API desde `pos-saas-api`.
@@ -355,7 +376,7 @@ npm.cmd run build
 No consideres terminado un despliegue si solo compila: también debe pasar
 health, readiness, CORS, login, aislamiento por organización y provisioning.
 
-## 14. Resolución de problemas
+## 15. Resolución de problemas
 
 ### `Failed to fetch`
 
@@ -388,7 +409,7 @@ usuario directamente en la tabla de Auth.
 El despliegue tiene protección de Vercel. Inicia sesión en Vercel o revisa la
 política de protección del entorno de staging.
 
-## 15. Decisiones importantes
+## 16. Decisiones importantes
 
 - Se eligió `platform_admin` separado de `admin` para evitar que un restaurante
   pueda administrar todo el SaaS.
@@ -400,7 +421,7 @@ política de protección del entorno de staging.
   autenticación, dominio y despliegue; separar servicios ahora aumentaría el
   costo operativo sin beneficio proporcional.
 
-## 16. Mantenimiento documental
+## 17. Mantenimiento documental
 
 Actualiza esta guía cuando cambien:
 

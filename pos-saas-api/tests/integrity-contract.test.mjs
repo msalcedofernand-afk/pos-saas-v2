@@ -58,6 +58,12 @@ const phase2IndexesMigrationUrl = new URL(
 );
 const platformUsersRouteUrl = new URL("../src/app/api/v1/platform/users/route.ts", import.meta.url);
 const platformUserActionsUrl = new URL("../src/lib/platform/user-actions.ts", import.meta.url);
+const phase3AuditMigrationUrl = new URL(
+  "../../pos-saas-infra/supabase/migrations/20260922044135_phase3_platform_audit_governance.sql",
+  import.meta.url,
+);
+const platformAuditRouteUrl = new URL("../src/app/api/v1/platform/audit/route.ts", import.meta.url);
+const platformAuditDetailRouteUrl = new URL("../src/app/api/v1/platform/audit/[id]/route.ts", import.meta.url);
 
 test("la migración conserva las invariantes críticas de pedidos y caja", async () => {
   const migration = await readFile(migrationUrl, "utf8");
@@ -173,4 +179,28 @@ test("la Fase 2 centraliza usuarios y membresías en acciones globales seguras",
   assert.match(usersRoute, /is_blocked/);
   assert.match(actions, /inviteUserByEmail|updateUserById/);
   assert.match(actions, /Idempotency-Key|idempotency/);
+});
+
+test("la Fase 3 expone auditoría global paginada y protegida", async () => {
+  const [migration, auditRoute, detailRoute] = await Promise.all([
+    readFile(phase3AuditMigrationUrl, "utf8"),
+    readFile(platformAuditRouteUrl, "utf8"),
+    readFile(platformAuditDetailRouteUrl, "utf8"),
+  ]);
+
+  assert.match(migration, /list_platform_audit_logs/);
+  assert.match(migration, /SECURITY INVOKER/);
+  assert.match(migration, /REVOKE ALL ON FUNCTION public\.list_platform_audit_logs/);
+  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.list_platform_audit_logs.*service_role/);
+  assert.match(migration, /p_organization_id/);
+  assert.match(migration, /p_page_size/);
+  assert.match(auditRoute, /authenticateApiRequest\(request, \["platform_admin"\]\)/);
+  assert.match(auditRoute, /actorUserId/);
+  assert.match(auditRoute, /organizationId/);
+  assert.match(auditRoute, /from/);
+  assert.match(auditRoute, /to/);
+  assert.match(auditRoute, /pageSize/);
+  assert.match(detailRoute, /platform_admin/);
+  assert.match(detailRoute, /old_values/);
+  assert.match(detailRoute, /new_values/);
 });
