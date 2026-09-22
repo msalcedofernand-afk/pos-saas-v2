@@ -38,11 +38,16 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await apiFetch("/api/v1/auth/login", {
+      const response = await apiFetch<{
+        data: {
+          roles?: string[];
+        };
+      }>("/api/v1/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
-      router.replace("/dashboard");
+      const destination = response.data.roles?.includes("platform_admin") ? "/dashboard/platform" : "/dashboard";
+      router.replace(destination);
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudo iniciar sesión");
