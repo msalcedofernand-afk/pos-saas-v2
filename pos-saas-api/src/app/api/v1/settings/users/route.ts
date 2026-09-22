@@ -16,7 +16,7 @@ type UserRow = {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin"]);
+    const auth = await authenticateApiRequest(request, ["admin"], { requireOrganization: true });
     if (auth.response) return auth.response;
     const { data, error } = await createAdminClient()
       .from("users")

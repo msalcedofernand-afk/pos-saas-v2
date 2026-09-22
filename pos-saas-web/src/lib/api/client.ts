@@ -1,8 +1,32 @@
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
 let csrfToken: string | null = null;
 const activeOrganizationStorageKey = "mesa-clara.active-organization";
+const platformContextStorageKey = "mesa-clara.platform-context";
 let activeOrganizationId: string | null =
   typeof window === "undefined" ? null : window.sessionStorage.getItem(activeOrganizationStorageKey);
+
+export type PlatformOrganizationContext = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+function readPlatformContext(): PlatformOrganizationContext | null {
+  if (typeof window === "undefined") return null;
+  const value = window.sessionStorage.getItem(platformContextStorageKey);
+  if (!value) return null;
+  try {
+    const context = JSON.parse(value) as Partial<PlatformOrganizationContext>;
+    if (typeof context.id !== "string" || typeof context.name !== "string" || typeof context.slug !== "string") {
+      return null;
+    }
+    return { id: context.id, name: context.name, slug: context.slug };
+  } catch {
+    return null;
+  }
+}
+
+let platformOrganizationContext = readPlatformContext();
 
 const mutatingMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -20,6 +44,23 @@ export function setActiveOrganizationId(organizationId: string | null) {
 
 export function getActiveOrganizationId() {
   return activeOrganizationId;
+}
+
+export function setPlatformOrganizationContext(context: PlatformOrganizationContext | null) {
+  platformOrganizationContext = context;
+  setActiveOrganizationId(context?.id ?? null);
+  if (typeof window !== "undefined") {
+    if (context) window.sessionStorage.setItem(platformContextStorageKey, JSON.stringify(context));
+    else window.sessionStorage.removeItem(platformContextStorageKey);
+  }
+}
+
+export function getPlatformOrganizationContext() {
+  return platformOrganizationContext;
+}
+
+export function clearOrganizationContext() {
+  setPlatformOrganizationContext(null);
 }
 
 async function getCsrfToken() {

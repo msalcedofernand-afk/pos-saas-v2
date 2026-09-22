@@ -7,7 +7,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "cashier", "waiter", "staff"]);
+    const auth = await authenticateApiRequest(request, ["admin", "cashier", "waiter", "staff"], {
+      requireOrganization: true,
+    });
     if (auth.response) return auth.response;
     const { data, error } = await createAdminClient()
       .from("tables_restaurant")

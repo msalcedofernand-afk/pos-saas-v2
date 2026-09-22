@@ -19,7 +19,7 @@ const updateSchema = z
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "cashier"]);
+    const auth = await authenticateApiRequest(request, ["admin", "cashier"], { requireOrganization: true });
     if (auth.response) return auth.response;
 
     const id = idSchema.parse((await params).id);
@@ -43,7 +43,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin"]);
+    const auth = await authenticateApiRequest(request, ["admin"], { requireOrganization: true });
     if (auth.response) return auth.response;
 
     const id = idSchema.parse((await params).id);

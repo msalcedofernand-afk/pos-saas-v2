@@ -10,7 +10,7 @@ const bodySchema = z.object({ openingAmount: money() });
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "cashier"]);
+    const auth = await authenticateApiRequest(request, ["admin", "cashier"], { requireOrganization: true });
     if (auth.response) return auth.response;
     const body = bodySchema.parse(await request.json());
     const idempotencyKey = getIdempotencyKey(request);

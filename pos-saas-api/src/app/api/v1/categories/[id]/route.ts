@@ -10,7 +10,7 @@ const idSchema = uuid;
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin"]);
+    const auth = await authenticateApiRequest(request, ["admin"], { requireOrganization: true });
     if (auth.response) return auth.response;
 
     const id = idSchema.parse((await params).id);

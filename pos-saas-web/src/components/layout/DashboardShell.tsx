@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { brand } from "@/config/brand";
+import {
+  clearOrganizationContext,
+  getPlatformOrganizationContext,
+  type PlatformOrganizationContext,
+} from "@/lib/api/client";
 
 const navigation = [
   { label: "Resumen", href: "/dashboard", section: "Operación" },
@@ -20,9 +25,21 @@ const pageNames = new Map(navigation.map((item) => [item.href, item.label]));
 
 export function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [platformContext, setPlatformContext] = useState<PlatformOrganizationContext | null>(null);
   const currentLabel = pageNames.get(pathname) ?? "Panel operativo";
   const sections = [...new Set(navigation.map((item) => item.section))];
+
+  useEffect(() => {
+    setPlatformContext(getPlatformOrganizationContext());
+  }, [pathname]);
+
+  function leaveOrganizationContext() {
+    clearOrganizationContext();
+    setPlatformContext(null);
+    router.replace("/dashboard/platform");
+  }
 
   return (
     <div className={`app-shell ${mobileOpen ? "app-shell-menu-open" : ""}`}>
@@ -100,7 +117,21 @@ export function DashboardShell({ children }: Readonly<{ children: React.ReactNod
             </span>
           </div>
         </header>
-        <main className="app-content">{children}</main>
+        <main className="app-content">
+          {platformContext && (
+            <div className="platform-context-banner" role="status">
+              <div>
+                <span className="eyebrow">Contexto operativo</span>
+                <strong>{platformContext.name}</strong>
+                <small>Las operaciones se ejecutan dentro de esta organización.</small>
+              </div>
+              <button className="button button-small button-secondary" onClick={leaveOrganizationContext} type="button">
+                Volver al panel global
+              </button>
+            </div>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   );

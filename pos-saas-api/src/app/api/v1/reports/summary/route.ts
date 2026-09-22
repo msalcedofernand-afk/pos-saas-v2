@@ -21,7 +21,7 @@ const querySchema = z
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "cashier"]);
+    const auth = await authenticateApiRequest(request, ["admin", "cashier"], { requireOrganization: true });
     if (auth.response) return auth.response;
     const { date } = querySchema.parse(Object.fromEntries(request.nextUrl.searchParams));
     const targetDate = date ?? businessDate();

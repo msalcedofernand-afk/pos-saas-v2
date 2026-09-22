@@ -34,7 +34,9 @@ function rpcConflict(error: { message?: string }) {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "cashier", "waiter", "kitchen", "staff"]);
+    const auth = await authenticateApiRequest(request, ["admin", "cashier", "waiter", "kitchen", "staff"], {
+      requireOrganization: true,
+    });
     if (auth.response) return auth.response;
     const queryParams = listSchema.parse(Object.fromEntries(request.nextUrl.searchParams));
     const from = (queryParams.page - 1) * queryParams.limit;
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "waiter", "cashier"]);
+    const auth = await authenticateApiRequest(request, ["admin", "waiter", "cashier"], { requireOrganization: true });
     if (auth.response) return auth.response;
     const body = createSchema.parse(await request.json());
     const idempotencyKey = getIdempotencyKey(request);

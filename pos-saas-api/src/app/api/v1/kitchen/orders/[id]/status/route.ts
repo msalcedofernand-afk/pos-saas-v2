@@ -13,7 +13,7 @@ const bodySchema = z.object({
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "kitchen"]);
+    const auth = await authenticateApiRequest(request, ["admin", "kitchen"], { requireOrganization: true });
     if (auth.response) return auth.response;
 
     const orderId = idSchema.parse((await params).id);

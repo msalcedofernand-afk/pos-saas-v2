@@ -10,7 +10,7 @@ const bodySchema = z.object({ roleIds: z.array(uuid).max(20) });
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin"]);
+    const auth = await authenticateApiRequest(request, ["admin"], { requireOrganization: true });
     if (auth.response) return auth.response;
     const userId = idSchema.parse((await params).id);
     const body = bodySchema.parse(await request.json());

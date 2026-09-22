@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch, setActiveOrganizationId } from "@/lib/api/client";
+import { apiFetch, clearOrganizationContext, setActiveOrganizationId } from "@/lib/api/client";
 import { brand } from "@/config/brand";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useApiHealth } from "@/hooks/useApiHealth";
@@ -107,6 +107,7 @@ export default function DashboardPage() {
 
   async function logout() {
     await apiFetch("/api/v1/auth/logout", { method: "POST" });
+    clearOrganizationContext();
     router.replace("/login");
     router.refresh();
   }

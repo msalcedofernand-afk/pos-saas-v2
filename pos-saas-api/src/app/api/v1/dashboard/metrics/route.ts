@@ -17,7 +17,9 @@ type DashboardMetricValues = {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "cashier", "waiter", "kitchen", "staff"]);
+    const auth = await authenticateApiRequest(request, ["admin", "cashier", "waiter", "kitchen", "staff"], {
+      requireOrganization: true,
+    });
     if (auth.response) return auth.response;
     const { start, end } = businessDayRange(businessDate());
     const { data, error } = await createAdminClient().rpc("get_dashboard_metrics", {

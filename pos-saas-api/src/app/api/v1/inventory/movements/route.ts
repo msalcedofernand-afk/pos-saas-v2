@@ -15,7 +15,7 @@ const bodySchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "staff"]);
+    const auth = await authenticateApiRequest(request, ["admin", "staff"], { requireOrganization: true });
     if (auth.response) return auth.response;
     const body = bodySchema.parse(await request.json());
     const db = createAdminClient();

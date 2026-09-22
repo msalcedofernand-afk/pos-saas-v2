@@ -18,7 +18,7 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request);
+    const auth = await authenticateApiRequest(request, undefined, { requireOrganization: true });
     if (auth.response) return auth.response;
 
     const query = querySchema.parse(Object.fromEntries(request.nextUrl.searchParams));
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "cashier"]);
+    const auth = await authenticateApiRequest(request, ["admin", "cashier"], { requireOrganization: true });
     if (auth.response) return auth.response;
 
     const body = categorySchema.parse(await request.json());

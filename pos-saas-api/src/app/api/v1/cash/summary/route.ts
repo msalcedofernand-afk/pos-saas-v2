@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "cashier"]);
+    const auth = await authenticateApiRequest(request, ["admin", "cashier"], { requireOrganization: true });
     if (auth.response) return auth.response;
     const db = createAdminClient();
     const { data: shifts, error: shiftError } = await db

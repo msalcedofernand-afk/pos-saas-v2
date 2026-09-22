@@ -9,9 +9,18 @@ import type { Database } from "@/types/database";
 export interface ApiUser {
   id: string;
   email: string | undefined;
-  organizationId: string;
+  organizationId: string | null;
   roles: string[];
 }
+
+export interface ApiUserWithOrganization extends ApiUser {
+  organizationId: string;
+}
+
+type AuthenticationFailure = { user: null; response: ReturnType<typeof apiError> };
+type AuthenticationSuccess<TUser extends ApiUser> = { user: TUser; response: null };
+type AuthenticationResult<TUser extends ApiUser> = AuthenticationFailure | AuthenticationSuccess<TUser>;
+type AuthenticationOptions = { requireOrganization?: boolean };
 
 type MembershipRow = {
   organization_id: string;
@@ -145,7 +154,21 @@ export async function getUserRoles(userId: string) {
   return membership?.roles ?? [];
 }
 
-export async function authenticateApiRequest(request: Request, allowedRoles?: readonly string[]) {
+export function authenticateApiRequest(
+  request: Request,
+  allowedRoles: readonly string[] | undefined,
+  options: { requireOrganization: true },
+): Promise<AuthenticationResult<ApiUserWithOrganization>>;
+export function authenticateApiRequest(
+  request: Request,
+  allowedRoles?: readonly string[],
+  options?: AuthenticationOptions,
+): Promise<AuthenticationResult<ApiUser>>;
+export async function authenticateApiRequest(
+  request: Request,
+  allowedRoles?: readonly string[],
+  options: AuthenticationOptions = {},
+) {
   const authorization = request.headers.get("authorization");
   let user: { id: string; email?: string } | null = null;
 
@@ -198,28 +221,32 @@ export async function authenticateApiRequest(request: Request, allowedRoles?: re
   }
 
   const globalRoles = await getGlobalUserRoles(user.id);
-  let membership = await getUserMembership(user.id, requestedOrganizationId);
   const isPlatformAdmin = globalRoles.includes("platform_admin");
+  let membership = null;
 
-  if (!membership && isPlatformAdmin) {
+  if (isPlatformAdmin && requestedOrganizationId) {
     const db = createAdminClient();
-    let organizationQuery = db
+    const { data: organization, error: organizationError } = await db
       .from("organizations")
       .select("id")
       .eq("is_active", true)
-      .order("created_at", { ascending: true })
-      .limit(1);
-    if (requestedOrganizationId) organizationQuery = organizationQuery.eq("id", requestedOrganizationId);
-    const { data: organization, error: organizationError } = await organizationQuery.maybeSingle();
+      .eq("id", requestedOrganizationId)
+      .maybeSingle();
     if (organizationError) throw organizationError;
     if (organization) membership = { organizationId: organization.id, roles: [] };
+    else return { user: null, response: apiError("Organización no disponible", 404) } as const;
+  } else if (!isPlatformAdmin) {
+    membership = await getUserMembership(user.id, requestedOrganizationId);
   }
 
   if (!membership && !isPlatformAdmin) {
     return { user: null, response: apiError("Usuario sin organización asignada", 403) } as const;
   }
-  if (!membership) {
-    return { user: null, response: apiError("No hay una organización activa disponible", 503) } as const;
+  if (options.requireOrganization && !membership) {
+    return {
+      user: null,
+      response: apiError("Selecciona una organización desde el panel de plataforma", 409),
+    } as const;
   }
 
   const roles = [...new Set([...globalRoles, ...(membership?.roles ?? [])])];
@@ -228,8 +255,11 @@ export async function authenticateApiRequest(request: Request, allowedRoles?: re
     return { user: null, response: apiError("Permisos insuficientes", 403) } as const;
   }
 
-  return {
-    user: { id: user.id, email: user.email, organizationId: membership.organizationId, roles } satisfies ApiUser,
-    response: null,
-  } as const;
+  const apiUser = {
+    id: user.id,
+    email: user.email,
+    organizationId: membership?.organizationId ?? null,
+    roles,
+  } satisfies ApiUser;
+  return { user: apiUser, response: null } as const;
 }

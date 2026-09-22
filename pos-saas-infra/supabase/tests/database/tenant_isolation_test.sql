@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(6);
+SELECT plan(7);
 
 INSERT INTO auth.users (id, email, encrypted_password, aud, role, email_confirmed_at)
 VALUES (
@@ -53,6 +53,13 @@ SELECT throws_ok(
   '42501',
   NULL,
   'las asignaciones de roles sólo son accesibles desde el servidor'
+);
+
+SELECT throws_ok(
+  $$SELECT public.has_role('admin')$$,
+  '42501',
+  NULL,
+  'la función de roles no es ejecutable por usuarios autenticados'
 );
 
 SELECT is(

@@ -21,6 +21,12 @@ const platformSecurityMigrationUrl = new URL(
   import.meta.url,
 );
 const platformRouteUrl = new URL("../src/app/api/v1/platform/organizations/route.ts", import.meta.url);
+const platformContextRouteUrl = new URL("../src/app/api/v1/platform/context/route.ts", import.meta.url);
+const platformContextMigrationUrl = new URL(
+  "../../pos-saas-infra/supabase/migrations/20260922032040_phase0_explicit_platform_context.sql",
+  import.meta.url,
+);
+const apiAuthUrl = new URL("../src/lib/auth/api.ts", import.meta.url);
 
 test("la migración conserva las invariantes críticas de pedidos y caja", async () => {
   const migration = await readFile(migrationUrl, "utf8");
@@ -72,4 +78,20 @@ test("el alta global permanece separada del admin de una organización", async (
   assert.match(platformRoute, /inviteUserByEmail/);
   assert.match(platformRoute, /idempotency-key/);
   assert.doesNotMatch(platformRoute, /adminPassword/);
+});
+
+test("el administrador global debe seleccionar el contexto operativo", async () => {
+  const [migration, auth, contextRoute] = await Promise.all([
+    readFile(platformContextMigrationUrl, "utf8"),
+    readFile(apiAuthUrl, "utf8"),
+    readFile(platformContextRouteUrl, "utf8"),
+  ]);
+
+  assert.match(migration, /DROP POLICY IF EXISTS roles_insert/);
+  assert.match(migration, /REVOKE EXECUTE ON FUNCTION public\.has_role\(text\) FROM anon, authenticated/);
+  assert.match(auth, /organizationId: string \| null/);
+  assert.match(auth, /Selecciona una organización desde el panel de plataforma/);
+  assert.doesNotMatch(auth, /order\("created_at", \{ ascending: true \}\)\.limit\(1\)/);
+  assert.match(contextRoute, /platform_organization_context_selected/);
+  assert.match(contextRoute, /authenticateApiRequest\(request, \["platform_admin"\]\)/);
 });

@@ -13,7 +13,7 @@ const idSchema = uuid;
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "waiter", "cashier"]);
+    const auth = await authenticateApiRequest(request, ["admin", "waiter", "cashier"], { requireOrganization: true });
     if (auth.response) return auth.response;
     const id = idSchema.parse((await params).id);
     const body = bodySchema.parse(await request.json());

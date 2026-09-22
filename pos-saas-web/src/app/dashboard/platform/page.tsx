@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch, clearOrganizationContext, setPlatformOrganizationContext } from "@/lib/api/client";
 
 type Organization = {
   id: string;
@@ -32,6 +32,7 @@ export default function PlatformPage() {
   const [adminEmail, setAdminEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [contextLoadingId, setContextLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -50,6 +51,7 @@ export default function PlatformPage() {
   }, [router]);
 
   useEffect(() => {
+    clearOrganizationContext();
     void loadOrganizations();
   }, [loadOrganizations]);
 
@@ -84,8 +86,26 @@ export default function PlatformPage() {
 
   async function logout() {
     await apiFetch("/api/v1/auth/logout", { method: "POST" });
+    clearOrganizationContext();
     router.replace("/login");
     router.refresh();
+  }
+
+  async function openOrganization(organization: Organization) {
+    setContextLoadingId(organization.id);
+    setError(null);
+    try {
+      const response = await apiFetch<{ data: Pick<Organization, "id" | "name" | "slug"> }>(
+        "/api/v1/platform/context",
+        { method: "POST", body: JSON.stringify({ organizationId: organization.id }) },
+      );
+      setPlatformOrganizationContext(response.data);
+      router.push("/dashboard/orders");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo abrir el contexto operativo");
+    } finally {
+      setContextLoadingId(null);
+    }
   }
 
   return (
@@ -169,7 +189,17 @@ export default function PlatformPage() {
                     <strong>{organization.name}</strong>
                     <small>{organization.slug}</small>
                   </div>
-                  <span className="status-pill available">Activa</span>
+                  <div className="platform-organization-actions">
+                    <span className="status-pill available">Activa</span>
+                    <button
+                      className="button button-small button-secondary"
+                      disabled={contextLoadingId !== null}
+                      onClick={() => void openOrganization(organization)}
+                      type="button"
+                    >
+                      {contextLoadingId === organization.id ? "Abriendo..." : "Abrir operación"}
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>

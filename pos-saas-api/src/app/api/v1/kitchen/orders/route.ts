@@ -15,7 +15,7 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApiRequest(request, ["admin", "kitchen", "staff"]);
+    const auth = await authenticateApiRequest(request, ["admin", "kitchen", "staff"], { requireOrganization: true });
     if (auth.response) return auth.response;
     const queryParams = querySchema.parse(Object.fromEntries(request.nextUrl.searchParams));
     const from = (queryParams.page - 1) * queryParams.limit;
