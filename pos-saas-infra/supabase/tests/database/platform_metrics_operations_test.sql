@@ -55,19 +55,19 @@ SELECT is(
 );
 
 SELECT lives_ok($$SELECT public.get_platform_operational_metrics(
-  '00000000-0000-0000-0000-000000000901', NULL, now() - interval '30 days', now()
+  '00000000-0000-0000-0000-000000000901', NULL, now() - interval '30 days', now() + interval '1 minute'
 )$$, 'service_role puede consultar métricas globales');
 
 SELECT ok(
   (public.get_platform_operational_metrics(
-    '00000000-0000-0000-0000-000000000901', NULL, now() - interval '30 days', now()
+    '00000000-0000-0000-0000-000000000901', NULL, now() - interval '30 days', now() + interval '1 minute'
   )->'users'->>'active')::integer >= 1,
   'las métricas globales incluyen usuarios activos'
 );
 
 SELECT ok(
   public.get_platform_operational_metrics(
-    '00000000-0000-0000-0000-000000000901', NULL, now() - interval '30 days', now()
+    '00000000-0000-0000-0000-000000000901', NULL, now() - interval '30 days', now() + interval '1 minute'
   )->'organizationMetrics' @> '[{"organizationId":"00000000-0000-0000-0000-000000000905"}]'::jsonb,
   'las métricas incluyen el restaurante objetivo'
 );
@@ -82,14 +82,14 @@ VALUES (
 
 SELECT ok(
   public.get_platform_operational_metrics(
-    '00000000-0000-0000-0000-000000000901', '00000000-0000-0000-0000-000000000905', now() - interval '30 days', now()
+    '00000000-0000-0000-0000-000000000901', '00000000-0000-0000-0000-000000000905', now() - interval '30 days', now() + interval '1 minute'
   )->'recentErrors' @> '[{"operation":"phase5_invitation_failure"}]'::jsonb,
   'las métricas muestran errores recientes por restaurante'
 );
 
 SELECT is(
   (public.get_platform_operational_metrics(
-    '00000000-0000-0000-0000-000000000901', '00000000-0000-0000-0000-000000000905', now() - interval '30 days', now()
+    '00000000-0000-0000-0000-000000000901', '00000000-0000-0000-0000-000000000905', now() - interval '30 days', now() + interval '1 minute'
   )->'pendingInvitations')::integer,
   1,
   'las invitaciones pendientes se aíslan por restaurante'
