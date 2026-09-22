@@ -15,7 +15,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const recoveryHash = window.location.hash;
+    const hashParams = new URLSearchParams(recoveryHash.replace(/^#/, ""));
     const authType = hashParams.get("type");
     const isRecoveryFlow =
       authType === "recovery" ||
@@ -28,7 +29,7 @@ export default function LoginPage() {
     // Initialize Supabase so it consumes the session fragment before the
     // password page reads the recovery session.
     getBrowserAuthClient();
-    router.replace(`/auth/update-password${window.location.hash}`);
+    router.replace(`/auth/update-password${recoveryHash}`);
   }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
