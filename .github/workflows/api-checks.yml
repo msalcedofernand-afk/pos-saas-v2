@@ -114,22 +114,21 @@ jobs:
           if [ "$test_status" -ne 0 ]; then
             direct_status=0
             for test_file in order_cash_integrity_test.sql tenant_isolation_test.sql auth_security_test.sql idempotency_test.sql role_transaction_test.sql input_constraints_test.sql organization_lifecycle_test.sql platform_user_membership_test.sql platform_audit_governance_test.sql platform_support_access_test.sql platform_metrics_operations_test.sql; do
+              file_status=0
               docker run --rm --network host \
                 -e PGPASSWORD=postgres \
                 -v "$GITHUB_WORKSPACE/pos-saas-infra/supabase/tests:/tests:ro" \
                 public.ecr.aws/supabase/pg_prove:3.36 \
                 pg_prove --host=127.0.0.1 --port=54322 --username=postgres --dbname=postgres \
                   "/tests/database/$test_file" \
-                2>&1 | tee -a "$RUNNER_TEMP/pg-prove-direct.log" || direct_status=1
+                2>&1 | tee -a "$RUNNER_TEMP/pg-prove-direct.log" || file_status=$?
+              if [ "$file_status" -ne 0 ]; then
+                direct_status=1
+                echo "::error title=Direct pgTAP failure::$test_file returned exit code $file_status"
+              fi
             done
-            while IFS= read -r line; do
-              echo "::error title=Direct pgTAP diagnostic::$line"
-            done < "$RUNNER_TEMP/pg-prove-direct.log"
-            while IFS= read -r line; do
-              echo "::error title=Supabase database test::$line"
-            done < "$RUNNER_TEMP/supabase-test-db.log"
             if [ "$direct_status" -ne 0 ]; then
-              echo "::error title=Direct pgTAP diagnostic::One or more direct pgTAP files failed"
+              echo "::error title=Direct pgTAP diagnostic::One or more direct pgTAP files failed. See pg-prove-direct.log artifact."
               exit 1
             fi
             echo "::warning title=Supabase database test::supabase test db returned $test_status; direct pgTAP validation passed"
