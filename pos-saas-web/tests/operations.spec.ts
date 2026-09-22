@@ -6,6 +6,10 @@ const adminCredentials = {
   email: process.env.E2E_ADMIN_EMAIL ?? process.env.E2E_EMAIL,
   password: process.env.E2E_ADMIN_PASSWORD ?? process.env.E2E_PASSWORD,
 };
+const platformCredentials = {
+  email: process.env.E2E_PLATFORM_EMAIL,
+  password: process.env.E2E_PLATFORM_PASSWORD,
+};
 const configured = Boolean(
   actorCredentials.email && actorCredentials.password && adminCredentials.email && adminCredentials.password,
 );
@@ -115,6 +119,31 @@ test.describe("operaciones autenticadas", () => {
       data: { email: actorCredentials.email, password: `${actorCredentials.password}-incorrecta` },
     });
     expect(response.status()).toBe(401);
+  });
+
+  test("administración global de usuarios y membresías", async ({ request }) => {
+    const targetUserId = process.env.E2E_PLATFORM_TARGET_USER_ID;
+    requireOrSkip(
+      Boolean(platformCredentials.email && platformCredentials.password && targetUserId),
+      "Configura E2E_PLATFORM_EMAIL, E2E_PLATFORM_PASSWORD y E2E_PLATFORM_TARGET_USER_ID",
+    );
+    const platform = await login(request, platformCredentials);
+    requireOrSkip(platform.data.roles.includes("platform_admin"), "La cuenta E2E global debe tener platform_admin");
+
+    const usersResponse = await request.get(`${apiUrl}/api/v1/platform/users`);
+    expect(usersResponse.status(), await usersResponse.text()).toBe(200);
+    const users = (await usersResponse.json()).data as Array<{ id: string }>;
+    expect(users.some((user) => user.id === targetUserId)).toBe(true);
+
+    const blockResponse = await request.post(`${apiUrl}/api/v1/platform/users/${targetUserId}/block`, {
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+    });
+    expect(blockResponse.status(), await blockResponse.text()).toBe(200);
+
+    const unblockResponse = await request.post(`${apiUrl}/api/v1/platform/users/${targetUserId}/unblock`, {
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+    });
+    expect(unblockResponse.status(), await unblockResponse.text()).toBe(200);
   });
 
   test("cambio explícito de organización", async ({ request }) => {

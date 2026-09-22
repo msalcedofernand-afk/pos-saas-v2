@@ -48,6 +48,16 @@ const platformContextMigrationUrl = new URL(
   import.meta.url,
 );
 const apiAuthUrl = new URL("../src/lib/auth/api.ts", import.meta.url);
+const phase2MigrationUrl = new URL(
+  "../../pos-saas-infra/supabase/migrations/20260922041825_phase2_user_membership_administration.sql",
+  import.meta.url,
+);
+const phase2IndexesMigrationUrl = new URL(
+  "../../pos-saas-infra/supabase/migrations/20260922042409_phase2_user_membership_indexes.sql",
+  import.meta.url,
+);
+const platformUsersRouteUrl = new URL("../src/app/api/v1/platform/users/route.ts", import.meta.url);
+const platformUserActionsUrl = new URL("../src/lib/platform/user-actions.ts", import.meta.url);
 
 test("la migración conserva las invariantes críticas de pedidos y caja", async () => {
   const migration = await readFile(migrationUrl, "utf8");
@@ -139,4 +149,28 @@ test("la administración global de organizaciones es reversible y auditable", as
   assert.match(actionsMigration, /organization_suspended/);
   assert.match(actionsMigration, /organization_reactivated/);
   assert.match(actionsMigration, /REVOKE ALL ON FUNCTION public\.apply_platform_organization_action/);
+});
+
+test("la Fase 2 centraliza usuarios y membresías en acciones globales seguras", async () => {
+  const [migration, indexesMigration, usersRoute, actions] = await Promise.all([
+    readFile(phase2MigrationUrl, "utf8"),
+    readFile(phase2IndexesMigrationUrl, "utf8"),
+    readFile(platformUsersRouteUrl, "utf8"),
+    readFile(platformUserActionsUrl, "utf8"),
+  ]);
+
+  assert.match(migration, /platform_user_action_requests/);
+  assert.match(migration, /platform_membership_action_requests/);
+  assert.match(migration, /apply_platform_user_action/);
+  assert.match(migration, /apply_platform_membership_action/);
+  assert.match(migration, /La organización debe conservar al menos un administrador/);
+  assert.match(migration, /r\.name = 'platform_admin'/);
+  assert.match(migration, /REVOKE ALL ON FUNCTION public\.apply_platform_user_action/);
+  assert.match(migration, /REVOKE ALL ON FUNCTION public\.apply_platform_membership_action/);
+  assert.match(indexesMigration, /platform_user_action_requests_actor_idx/);
+  assert.match(indexesMigration, /platform_membership_action_requests_actor_idx/);
+  assert.match(usersRoute, /platform_admin/);
+  assert.match(usersRoute, /is_blocked/);
+  assert.match(actions, /inviteUserByEmail|updateUserById/);
+  assert.match(actions, /Idempotency-Key|idempotency/);
 });

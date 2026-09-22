@@ -214,6 +214,19 @@ h1 { font-size: clamp(40px, 6vw, 72px); letter-spacing: -0.07em; line-height: 0.
 .settings-layout { display: grid; gap: 14px; grid-template-columns: 1fr .75fr; }
 .platform-intro { color: var(--muted); line-height: 1.6; max-width: 720px; }
 .platform-layout { display: grid; gap: 14px; grid-template-columns: minmax(360px, .85fr) minmax(0, 1.15fr); margin-top: 20px; }
+.platform-users-toolbar { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) 260px; margin: 20px 0 14px; }
+.platform-users-layout { display: grid; gap: 14px; grid-template-columns: minmax(300px, .9fr) minmax(0, 1.1fr); }
+.platform-user-list { display: grid; gap: 8px; }
+.platform-user-card { align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; padding: 13px; text-align: left; width: 100%; }
+.platform-user-card:hover, .platform-user-card.selected { border-color: #a5b4fc; box-shadow: 0 5px 16px rgba(79, 70, 229, .08); }
+.platform-user-card > span:first-child { display: grid; gap: 4px; min-width: 0; }
+.platform-user-card small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.platform-user-detail { display: grid; gap: 12px; align-content: start; }
+.platform-user-detail h2 { margin: 0; }
+.platform-user-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.platform-membership-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.platform-add-member { display: grid; gap: 14px; margin-top: 14px; }
+.role-check-list.inline { align-content: start; display: flex; flex-wrap: wrap; gap: 10px; }
 .platform-form { display: grid; gap: 14px; }
 .platform-form h2 { margin: 0; }
 .platform-form label { display: grid; font-size: 12px; font-weight: 700; gap: 7px; }

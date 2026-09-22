@@ -2,7 +2,7 @@
 
 Guía funcional y técnica para desarrollar, desplegar y operar el POS SaaS.
 
-> Estado de referencia: Fase 1 en el commit que publique este cambio — 22 de septiembre de 2026.
+> Estado de referencia: Fase 2 en el commit que publique este cambio — 22 de septiembre de 2026.
 
 ## 1. Qué es el sistema
 
@@ -175,7 +175,38 @@ restaura el acceso y limpia los datos de suspensión. Cada cambio real genera
 un evento en `platform_audit_logs`; repetir la misma solicitud devuelve la
 respuesta guardada sin duplicar auditoría.
 
-## 8. Recuperación de contraseña
+## 8. Administrar usuarios y membresías globales
+
+Desde `/dashboard/platform/users`, un `platform_admin` puede consultar todos
+los usuarios y filtrar por restaurante, bloquear o desbloquear cuentas,
+reenviar invitaciones, agregar usuarios a una organización, cambiar roles y
+revocar membresías.
+
+Endpoints globales:
+
+```text
+GET    /api/v1/platform/users
+POST   /api/v1/platform/users/:id/block
+POST   /api/v1/platform/users/:id/unblock
+POST   /api/v1/platform/users/:id/invite
+GET    /api/v1/platform/organizations/:id/members
+POST   /api/v1/platform/organizations/:id/members
+PATCH  /api/v1/platform/organizations/:id/members/:userId
+DELETE /api/v1/platform/organizations/:id/members/:userId
+```
+
+Las acciones mutables requieren `Idempotency-Key`. La base de datos bloquea
+las membresías de la organización durante el cambio y rechaza cualquier
+operación que deje a la organización sin administrador. `platform_admin` no
+puede asignarse como rol de restaurante. Cada cambio se guarda en
+`platform_audit_logs`; las tablas de solicitudes y funciones administrativas
+solo son ejecutables por `service_role`.
+
+Bloquear actualiza el perfil operativo y aplica una suspensión de Auth desde
+el servidor. Desbloquear revierte ambas condiciones. Las invitaciones no usan
+contraseñas fijas: Supabase Auth envía el enlace.
+
+## 9. Recuperación de contraseña
 
 Rutas de la web:
 
@@ -194,7 +225,7 @@ Auth. En Supabase configura:
 Los enlaces enviados por el proveedor SMTP integrado tienen un límite bajo. Si
 se supera, espera al restablecimiento del límite o configura SMTP propio.
 
-## 9. API esencial
+## 10. API esencial
 
 ### Salud
 
@@ -226,6 +257,19 @@ POST /api/v1/platform/organizations/:id/reactivate
 GET  /api/v1/organizations
 ```
 
+### Usuarios y membresías globales
+
+```text
+GET    /api/v1/platform/users
+POST   /api/v1/platform/users/:id/block
+POST   /api/v1/platform/users/:id/unblock
+POST   /api/v1/platform/users/:id/invite
+GET    /api/v1/platform/organizations/:id/members
+POST   /api/v1/platform/organizations/:id/members
+PATCH  /api/v1/platform/organizations/:id/members/:userId
+DELETE /api/v1/platform/organizations/:id/members/:userId
+```
+
 ### Operación del restaurante
 
 ```text
@@ -245,7 +289,7 @@ GET  /api/v1/organizations
 Las rutas protegidas requieren cookies de sesión, organización activa y los
 controles de autorización correspondientes.
 
-## 10. Seguridad operativa
+## 11. Seguridad operativa
 
 - No compartas tokens de recuperación ni URLs con `access_token`.
 - Rota la contraseña si un token fue pegado en un chat o ticket.
@@ -257,7 +301,7 @@ controles de autorización correspondientes.
 - Revisa auditoría después de bootstrap y provisioning.
 - Usa SMTP propio antes de abrir el onboarding a más usuarios.
 
-## 11. Desarrollo local
+## 12. Desarrollo local
 
 API:
 
@@ -294,7 +338,7 @@ npm.cmd test
 npm.cmd run build
 ```
 
-## 12. Despliegue
+## 13. Despliegue
 
 1. Confirma que GitHub contiene el commit esperado.
 2. Despliega la API desde `pos-saas-api`.
@@ -311,7 +355,7 @@ npm.cmd run build
 No consideres terminado un despliegue si solo compila: también debe pasar
 health, readiness, CORS, login, aislamiento por organización y provisioning.
 
-## 13. Resolución de problemas
+## 14. Resolución de problemas
 
 ### `Failed to fetch`
 
@@ -344,7 +388,7 @@ usuario directamente en la tabla de Auth.
 El despliegue tiene protección de Vercel. Inicia sesión en Vercel o revisa la
 política de protección del entorno de staging.
 
-## 14. Decisiones importantes
+## 15. Decisiones importantes
 
 - Se eligió `platform_admin` separado de `admin` para evitar que un restaurante
   pueda administrar todo el SaaS.
@@ -356,7 +400,7 @@ política de protección del entorno de staging.
   autenticación, dominio y despliegue; separar servicios ahora aumentaría el
   costo operativo sin beneficio proporcional.
 
-## 15. Mantenimiento documental
+## 16. Mantenimiento documental
 
 Actualiza esta guía cuando cambien:
 

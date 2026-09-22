@@ -125,6 +125,9 @@ export default function PlatformPage() {
         </Link>
         <div className="nav-actions">
           <span className="nav-link">Administración SaaS</span>
+          <Link className="button button-small" href="/dashboard/platform/users">
+            Usuarios
+          </Link>
           <button className="button button-small" onClick={() => void logout()} type="button">
             Salir
           </button>
