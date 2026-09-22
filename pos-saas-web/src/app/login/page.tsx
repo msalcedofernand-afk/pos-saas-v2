@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api/client";
 import { brand } from "@/config/brand";
+import { getBrowserAuthClient } from "@/lib/auth/browser";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +13,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const authType = hashParams.get("type");
+    const isRecoveryFlow =
+      authType === "recovery" ||
+      authType === "invite" ||
+      hashParams.has("access_token") ||
+      hashParams.get("error_code") === "otp_expired";
+
+    if (!isRecoveryFlow) return;
+
+    // Initialize Supabase so it consumes the session fragment before the
+    // password page reads the recovery session.
+    getBrowserAuthClient();
+    router.replace(`/auth/update-password${window.location.hash}`);
+  }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
