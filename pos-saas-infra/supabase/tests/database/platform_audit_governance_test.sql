@@ -72,7 +72,7 @@ SELECT throws_ok($$SELECT public.list_platform_audit_logs(
 )$$, '42501', 'No autorizado', 'un usuario sin platform_admin no puede consultar logs globales');
 
 SELECT throws_ok($$SELECT public.list_platform_audit_logs(
-  '00000000-0000-0000-0000-000000000701', NULL, NULL, NULL, NULL, NULL, 1, 101
+  '00000000-0000-0000-0000-000000000701', NULL, NULL, NULL, NULL, NULL, NULL, 1, 101
 )$$, '22023', 'Paginación inválida', 'la función limita el tamaño de página');
 
 SELECT * FROM finish();
