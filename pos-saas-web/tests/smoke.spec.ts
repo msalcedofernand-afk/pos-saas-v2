@@ -45,3 +45,8 @@ test("panel global de métricas SaaS está publicado", async ({ request }) => {
   const response = await request.get("/dashboard/platform/metrics");
   expect(response.status()).toBe(200);
 });
+
+test("pantallas de recuperación de contraseña están publicadas", async ({ request }) => {
+  expect((await request.get("/login/forgot-password")).status()).toBe(200);
+  expect((await request.get("/auth/update-password")).status()).toBe(200);
+});

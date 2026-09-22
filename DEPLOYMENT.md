@@ -55,6 +55,11 @@ Supabase de staging antes de probar el onboarding.
 La web sólo recibe `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL` y la zona
 horaria. Nunca configures variables `SUPABASE_*` en el frontend.
 
+Para recuperación en staging, configura en Supabase Auth **Site URL** como
+`https://pos-saas-v2.vercel.app` y agrega como Redirect URL exacta
+`https://pos-saas-v2.vercel.app/auth/update-password`. Mantén las URLs de
+localhost únicamente como Redirect URLs de desarrollo.
+
 ## Verificación HTTP
 
 ```bash

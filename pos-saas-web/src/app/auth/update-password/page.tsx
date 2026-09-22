@@ -22,6 +22,12 @@ export default function UpdatePasswordPage() {
     try {
       const supabase = getBrowserAuthClient();
 
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      if (hashParams.get("error_description") || hashParams.get("error_code")) {
+        setError("El enlace de recuperación no es válido o ya expiró. Solicita uno nuevo.");
+        setChecking(false);
+      }
+
       const subscription = supabase.auth.onAuthStateChange((event, session) => {
         if (!mounted) return;
         if (event === "PASSWORD_RECOVERY" || Boolean(session)) {
@@ -41,7 +47,7 @@ export default function UpdatePasswordPage() {
 
         invalidLinkTimer = window.setTimeout(() => {
           if (mounted) setChecking(false);
-        }, 1000);
+        }, 10000);
       });
 
       return () => {

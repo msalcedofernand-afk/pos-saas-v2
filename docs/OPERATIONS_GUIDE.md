@@ -296,9 +296,14 @@ Rutas de la web:
 El flujo usa `resetPasswordForEmail` y posteriormente `updateUser` de Supabase
 Auth. En Supabase configura:
 
-- **Site URL**: dominio público de la web.
-- **Redirect URL**:
-  `https://<dominio-de-la-web>/auth/update-password`
+- **Site URL**: `https://pos-saas-v2.vercel.app`.
+- **Redirect URL**: `https://pos-saas-v2.vercel.app/auth/update-password`.
+- Para desarrollo local agrega `http://localhost:3001/**` solo como Redirect URL
+  adicional; no uses localhost como Site URL de staging o producción.
+
+La web calcula el redirect desde el dominio actual para evitar que una variable
+antigua envíe el enlace a localhost. Si personalizas la plantilla de correo,
+usa `{{ .RedirectTo }}` para los enlaces que reciben un `redirectTo` explícito.
 
 Los enlaces enviados por el proveedor SMTP integrado tienen un límite bajo. Si
 se supera, espera al restablecimiento del límite o configura SMTP propio.
