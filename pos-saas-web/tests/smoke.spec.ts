@@ -35,3 +35,8 @@ test("panel global de auditoría está publicado", async ({ request }) => {
   const response = await request.get("/dashboard/platform/audit");
   expect(response.status()).toBe(200);
 });
+
+test("panel global de soporte temporal está publicado", async ({ request }) => {
+  const response = await request.get("/dashboard/platform/support");
+  expect(response.status()).toBe(200);
+});

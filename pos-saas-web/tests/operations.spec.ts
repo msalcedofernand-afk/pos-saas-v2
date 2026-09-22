@@ -166,6 +166,34 @@ test.describe("operaciones autenticadas", () => {
     }
   });
 
+  test("acceso temporal de soporte inicia lectura y puede revocarse", async ({ request }) => {
+    const targetOrganizationId = process.env.E2E_PLATFORM_TARGET_ORGANIZATION_ID;
+    if (!platformCredentials.email || !platformCredentials.password || !targetOrganizationId) {
+      test.skip(true, "Configura E2E_PLATFORM_EMAIL, E2E_PLATFORM_PASSWORD y E2E_PLATFORM_TARGET_ORGANIZATION_ID");
+      return;
+    }
+    const platform = await login(request, platformCredentials);
+    requireOrSkip(platform.data.roles.includes("platform_admin"), "La cuenta E2E global debe tener platform_admin");
+    const createResponse = await request.post(`${apiUrl}/api/v1/platform/support/access`, {
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+      data: {
+        organizationId: targetOrganizationId,
+        reason: "Verificación E2E de soporte temporal",
+        durationMinutes: 15,
+      },
+    });
+    expect(createResponse.status(), await createResponse.text()).toBe(201);
+    const created = (await createResponse.json()).data as { id: string; mode: string };
+    expect(created.mode).toBe("read_only");
+
+    const revokeResponse = await request.post(`${apiUrl}/api/v1/platform/support/access/${created.id}/revoke`, {
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+      data: { reason: "Prueba E2E finalizada" },
+    });
+    expect(revokeResponse.status(), await revokeResponse.text()).toBe(200);
+    expect((await revokeResponse.json()).data.status).toBe("revoked");
+  });
+
   test("cambio explícito de organización", async ({ request }) => {
     requireOrSkip(configured, "Configura E2E_EMAIL y E2E_PASSWORD para probar multi-tenant");
     const result = await login(request, actorCredentials);

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { brand } from "@/config/brand";
 import {
+  apiFetch,
   clearOrganizationContext,
   getPlatformOrganizationContext,
   type PlatformOrganizationContext,
@@ -28,6 +29,7 @@ export function DashboardShell({ children }: Readonly<{ children: React.ReactNod
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [platformContext, setPlatformContext] = useState<PlatformOrganizationContext | null>(null);
+  const [revokingSupport, setRevokingSupport] = useState(false);
   const currentLabel = pageNames.get(pathname) ?? "Panel operativo";
   const sections = [...new Set(navigation.map((item) => item.section))];
 
@@ -35,10 +37,23 @@ export function DashboardShell({ children }: Readonly<{ children: React.ReactNod
     setPlatformContext(getPlatformOrganizationContext());
   }, [pathname]);
 
-  function leaveOrganizationContext() {
-    clearOrganizationContext();
-    setPlatformContext(null);
-    router.replace("/dashboard/platform");
+  async function leaveOrganizationContext() {
+    if (!platformContext) return;
+    setRevokingSupport(true);
+    try {
+      await apiFetch(`/api/v1/platform/support/access/${platformContext.supportAccessId}/revoke`, {
+        method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({ reason: "Salida manual del soporte temporal" }),
+      });
+    } catch {
+      // The context is still cleared locally; expired access will be rejected server-side.
+    } finally {
+      clearOrganizationContext();
+      setPlatformContext(null);
+      setRevokingSupport(false);
+      router.replace("/dashboard/platform");
+    }
   }
 
   return (
@@ -121,12 +136,22 @@ export function DashboardShell({ children }: Readonly<{ children: React.ReactNod
           {platformContext && (
             <div className="platform-context-banner" role="status">
               <div>
-                <span className="eyebrow">Contexto operativo</span>
+                <span className="eyebrow">
+                  Soporte temporal · {platformContext.supportMode === "write" ? "Escritura habilitada" : "Solo lectura"}
+                </span>
                 <strong>{platformContext.name}</strong>
-                <small>Las operaciones se ejecutan dentro de esta organización.</small>
+                <small>
+                  Vence {new Date(platformContext.expiresAt).toLocaleString("es-PE")}. Todas las acciones quedan
+                  auditadas.
+                </small>
               </div>
-              <button className="button button-small button-secondary" onClick={leaveOrganizationContext} type="button">
-                Volver al panel global
+              <button
+                className="button button-small button-secondary"
+                disabled={revokingSupport}
+                onClick={() => void leaveOrganizationContext()}
+                type="button"
+              >
+                {revokingSupport ? "Revocando..." : "Salir y revocar"}
               </button>
             </div>
           )}

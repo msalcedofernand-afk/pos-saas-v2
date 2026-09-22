@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch, clearOrganizationContext, setPlatformOrganizationContext } from "@/lib/api/client";
+import { apiFetch, clearOrganizationContext } from "@/lib/api/client";
 
 type Organization = {
   id: string;
@@ -37,7 +37,6 @@ export default function PlatformPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [contextLoadingId, setContextLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -100,21 +99,8 @@ export default function PlatformPage() {
     router.refresh();
   }
 
-  async function openOrganization(organization: Organization) {
-    setContextLoadingId(organization.id);
-    setError(null);
-    try {
-      const response = await apiFetch<{ data: Pick<Organization, "id" | "name" | "slug"> }>(
-        "/api/v1/platform/context",
-        { method: "POST", body: JSON.stringify({ organizationId: organization.id }) },
-      );
-      setPlatformOrganizationContext(response.data);
-      router.push("/dashboard/orders");
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo abrir el contexto operativo");
-    } finally {
-      setContextLoadingId(null);
-    }
+  function requestSupport(organization: Organization) {
+    router.push(`/dashboard/platform/support?organizationId=${encodeURIComponent(organization.id)}`);
   }
 
   return (
@@ -130,6 +116,9 @@ export default function PlatformPage() {
           </Link>
           <Link className="button button-small" href="/dashboard/platform/audit">
             Auditoría
+          </Link>
+          <Link className="button button-small" href="/dashboard/platform/support">
+            Soporte
           </Link>
           <button className="button button-small" onClick={() => void logout()} type="button">
             Salir
@@ -235,11 +224,11 @@ export default function PlatformPage() {
                     </Link>
                     <button
                       className="button button-small button-secondary"
-                      disabled={contextLoadingId !== null}
-                      onClick={() => void openOrganization(organization)}
+                      disabled={organization.status !== "active"}
+                      onClick={() => requestSupport(organization)}
                       type="button"
                     >
-                      {contextLoadingId === organization.id ? "Abriendo..." : "Abrir operación"}
+                      Solicitar soporte
                     </button>
                   </div>
                 </article>

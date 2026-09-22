@@ -58,6 +58,16 @@ const phase2IndexesMigrationUrl = new URL(
 );
 const platformUsersRouteUrl = new URL("../src/app/api/v1/platform/users/route.ts", import.meta.url);
 const platformUserActionsUrl = new URL("../src/lib/platform/user-actions.ts", import.meta.url);
+const phase4SupportMigrationUrl = new URL(
+  "../../pos-saas-infra/supabase/migrations/20260922050934_phase4_secure_support_access.sql",
+  import.meta.url,
+);
+const supportAccessRouteUrl = new URL("../src/app/api/v1/platform/support/access/route.ts", import.meta.url);
+const supportWriteRouteUrl = new URL("../src/app/api/v1/platform/support/access/[id]/write/route.ts", import.meta.url);
+const supportRevokeRouteUrl = new URL(
+  "../src/app/api/v1/platform/support/access/[id]/revoke/route.ts",
+  import.meta.url,
+);
 const phase3AuditMigrationUrl = new URL(
   "../../pos-saas-infra/supabase/migrations/20260922044135_phase3_platform_audit_governance.sql",
   import.meta.url,
@@ -203,4 +213,31 @@ test("la Fase 3 expone auditoría global paginada y protegida", async () => {
   assert.match(detailRoute, /platform_admin/);
   assert.match(detailRoute, /old_values/);
   assert.match(detailRoute, /new_values/);
+});
+
+test("la Fase 4 limita el soporte a concesiones temporales auditables", async () => {
+  const [migration, auth, accessRoute, writeRoute, revokeRoute] = await Promise.all([
+    readFile(phase4SupportMigrationUrl, "utf8"),
+    readFile(apiAuthUrl, "utf8"),
+    readFile(supportAccessRouteUrl, "utf8"),
+    readFile(supportWriteRouteUrl, "utf8"),
+    readFile(supportRevokeRouteUrl, "utf8"),
+  ]);
+
+  assert.match(migration, /platform_support_access_requests/);
+  assert.match(migration, /duration_minutes integer NOT NULL CHECK/);
+  assert.match(migration, /mode text NOT NULL DEFAULT 'read_only'/);
+  assert.match(migration, /expires_at timestamptz NOT NULL/);
+  assert.match(migration, /support_access_expired/);
+  assert.match(migration, /support_access_entered/);
+  assert.match(migration, /support_access_write_enabled/);
+  assert.match(migration, /support_access_revoked/);
+  assert.match(migration, /CONFIRMAR_ACCESO_ESCRITURA/);
+  assert.match(migration, /REVOKE ALL ON TABLE public\.platform_support_access_requests FROM anon, authenticated/);
+  assert.match(auth, /x-support-access-id/);
+  assert.match(auth, /El acceso temporal es de solo lectura/);
+  assert.match(accessRoute, /reason/);
+  assert.match(accessRoute, /durationMinutes/);
+  assert.match(writeRoute, /CONFIRMAR_ACCESO_ESCRITURA/);
+  assert.match(revokeRoute, /revocar/);
 });

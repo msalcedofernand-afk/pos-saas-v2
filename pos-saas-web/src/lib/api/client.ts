@@ -9,6 +9,9 @@ export type PlatformOrganizationContext = {
   id: string;
   name: string;
   slug: string;
+  supportAccessId: string;
+  supportMode: "read_only" | "write";
+  expiresAt: string;
 };
 
 function readPlatformContext(): PlatformOrganizationContext | null {
@@ -17,16 +20,31 @@ function readPlatformContext(): PlatformOrganizationContext | null {
   if (!value) return null;
   try {
     const context = JSON.parse(value) as Partial<PlatformOrganizationContext>;
-    if (typeof context.id !== "string" || typeof context.name !== "string" || typeof context.slug !== "string") {
+    if (
+      typeof context.id !== "string" ||
+      typeof context.name !== "string" ||
+      typeof context.slug !== "string" ||
+      typeof context.supportAccessId !== "string" ||
+      (context.supportMode !== "read_only" && context.supportMode !== "write") ||
+      typeof context.expiresAt !== "string"
+    ) {
       return null;
     }
-    return { id: context.id, name: context.name, slug: context.slug };
+    return {
+      id: context.id,
+      name: context.name,
+      slug: context.slug,
+      supportAccessId: context.supportAccessId,
+      supportMode: context.supportMode,
+      expiresAt: context.expiresAt,
+    };
   } catch {
     return null;
   }
 }
 
 let platformOrganizationContext = readPlatformContext();
+if (!platformOrganizationContext) activeOrganizationId = null;
 
 const mutatingMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -83,6 +101,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   const headers = new Headers(init?.headers);
   headers.set("Content-Type", "application/json");
   if (activeOrganizationId) headers.set("X-Organization-Id", activeOrganizationId);
+  if (platformOrganizationContext?.supportAccessId)
+    headers.set("X-Support-Access-Id", platformOrganizationContext.supportAccessId);
   if (mutatingMethods.has(method) && !path.endsWith("/auth/login")) {
     headers.set("X-CSRF-Token", await getCsrfToken());
   }

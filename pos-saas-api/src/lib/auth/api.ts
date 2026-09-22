@@ -4,6 +4,13 @@ import { createSupabaseContext } from "@supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { apiError } from "@/lib/api/response";
+import {
+  getActiveSupportAccess,
+  markSupportAccessEntered,
+  recordSupportAction,
+  recordSupportWriteDenied,
+  type ActiveSupportAccess,
+} from "@/lib/platform/support-access";
 import type { Database } from "@/types/database";
 
 export interface ApiUser {
@@ -11,6 +18,7 @@ export interface ApiUser {
   email: string | undefined;
   organizationId: string | null;
   roles: string[];
+  supportAccess: ActiveSupportAccess | null;
 }
 
 export interface ApiUserWithOrganization extends ApiUser {
@@ -223,8 +231,17 @@ export async function authenticateApiRequest(
   const globalRoles = await getGlobalUserRoles(user.id);
   const isPlatformAdmin = globalRoles.includes("platform_admin");
   let membership = null;
+  let supportAccess: ActiveSupportAccess | null = null;
+  const supportControlRequest = new URL(request.url).pathname.startsWith("/api/v1/platform/support/access");
 
-  if (isPlatformAdmin && requestedOrganizationId) {
+  if (isPlatformAdmin && requestedOrganizationId && !supportControlRequest) {
+    const supportAccessId = request.headers.get("x-support-access-id")?.trim();
+    if (!supportAccessId || !/^[0-9a-f-]{36}$/i.test(supportAccessId)) {
+      return {
+        user: null,
+        response: apiError("Debes solicitar un acceso temporal antes de entrar a esta organización", 409),
+      } as const;
+    }
     const db = createAdminClient();
     const { data: organization, error: organizationError } = await db
       .from("organizations")
@@ -235,6 +252,15 @@ export async function authenticateApiRequest(
     if (organizationError) throw organizationError;
     if (organization) membership = { organizationId: organization.id, roles: [] };
     else return { user: null, response: apiError("Organización no disponible", 404) } as const;
+    supportAccess = await getActiveSupportAccess(user.id, organization.id, supportAccessId);
+    if (!supportAccess)
+      return { user: null, response: apiError("El acceso temporal no está activo o ya expiró", 403) } as const;
+    await markSupportAccessEntered(user.id, supportAccess.id, organization.id);
+    if (!["GET", "HEAD"].includes(request.method) && supportAccess.mode === "read_only") {
+      await recordSupportWriteDenied(user.id, supportAccess, request);
+      return { user: null, response: apiError("El acceso temporal es de solo lectura", 403) } as const;
+    }
+    if (!["GET", "HEAD"].includes(request.method)) await recordSupportAction(user.id, supportAccess, request);
   } else if (!isPlatformAdmin) {
     membership = await getUserMembership(user.id, requestedOrganizationId);
   }
@@ -260,6 +286,7 @@ export async function authenticateApiRequest(
     email: user.email,
     organizationId: membership?.organizationId ?? null,
     roles,
+    supportAccess,
   } satisfies ApiUser;
   return { user: apiUser, response: null } as const;
 }

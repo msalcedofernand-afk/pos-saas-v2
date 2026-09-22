@@ -691,6 +691,111 @@ export type Database = {
           },
         ];
       };
+      platform_support_access_requests: {
+        Row: {
+          actor_user_id: string;
+          created_at: string;
+          duration_minutes: number;
+          entered_at: string | null;
+          expires_at: string;
+          id: string;
+          idempotency_key: string;
+          mode: string;
+          organization_id: string;
+          reason: string;
+          request_hash: string;
+          requested_at: string;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          revoke_reason: string | null;
+          revoke_idempotency_key: string | null;
+          revoke_request_hash: string | null;
+          revoke_response: Json | null;
+          response: Json | null;
+          starts_at: string;
+          status: string;
+          updated_at: string;
+          write_enabled_at: string | null;
+          write_enabled_by: string | null;
+          write_idempotency_key: string | null;
+          write_request_hash: string | null;
+          write_response: Json | null;
+        };
+        Insert: {
+          actor_user_id: string;
+          created_at?: string;
+          duration_minutes: number;
+          entered_at?: string | null;
+          expires_at: string;
+          id?: string;
+          idempotency_key: string;
+          mode?: string;
+          organization_id: string;
+          reason: string;
+          request_hash: string;
+          requested_at?: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          revoke_reason?: string | null;
+          revoke_idempotency_key?: string | null;
+          revoke_request_hash?: string | null;
+          revoke_response?: Json | null;
+          response?: Json | null;
+          starts_at?: string;
+          status?: string;
+          updated_at?: string;
+          write_enabled_at?: string | null;
+          write_enabled_by?: string | null;
+          write_idempotency_key?: string | null;
+          write_request_hash?: string | null;
+          write_response?: Json | null;
+        };
+        Update: {
+          actor_user_id?: string;
+          created_at?: string;
+          duration_minutes?: number;
+          entered_at?: string | null;
+          expires_at?: string;
+          id?: string;
+          idempotency_key?: string;
+          mode?: string;
+          organization_id?: string;
+          reason?: string;
+          request_hash?: string;
+          requested_at?: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          revoke_reason?: string | null;
+          revoke_idempotency_key?: string | null;
+          revoke_request_hash?: string | null;
+          revoke_response?: Json | null;
+          response?: Json | null;
+          starts_at?: string;
+          status?: string;
+          updated_at?: string;
+          write_enabled_at?: string | null;
+          write_enabled_by?: string | null;
+          write_idempotency_key?: string | null;
+          write_request_hash?: string | null;
+          write_response?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_support_access_requests_actor_user_id_fkey";
+            columns: ["actor_user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "platform_support_access_requests_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       platform_organization_action_requests: {
         Row: {
           action: string;
@@ -1486,6 +1591,17 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_platform_support_access: {
+        Args: {
+          p_actor_user_id: string;
+          p_duration_minutes: number;
+          p_idempotency_key: string;
+          p_organization_id: string;
+          p_reason: string;
+          p_request_hash: string;
+        };
+        Returns: Json;
+      };
       apply_platform_organization_action: {
         Args: {
           p_action: string;
@@ -1581,6 +1697,31 @@ export type Database = {
       };
       get_user_roles: { Args: never; Returns: string[] };
       has_role: { Args: { role_name: string }; Returns: boolean };
+      enable_platform_support_write: {
+        Args: {
+          p_access_id: string;
+          p_actor_user_id: string;
+          p_confirmation: string;
+          p_idempotency_key: string;
+          p_request_hash: string;
+        };
+        Returns: Json;
+      };
+      expire_platform_support_access_sessions: { Args: never; Returns: number };
+      mark_platform_support_access_entered: {
+        Args: { p_access_id: string; p_actor_user_id: string; p_organization_id: string };
+        Returns: boolean;
+      };
+      revoke_platform_support_access: {
+        Args: {
+          p_access_id: string;
+          p_actor_user_id: string;
+          p_idempotency_key: string;
+          p_reason: string;
+          p_request_hash: string;
+        };
+        Returns: Json;
+      };
       open_cash_shift_idempotent: {
         Args: {
           p_idempotency_key: string;
