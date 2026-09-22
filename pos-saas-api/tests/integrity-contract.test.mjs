@@ -74,6 +74,11 @@ const phase3AuditMigrationUrl = new URL(
 );
 const platformAuditRouteUrl = new URL("../src/app/api/v1/platform/audit/route.ts", import.meta.url);
 const platformAuditDetailRouteUrl = new URL("../src/app/api/v1/platform/audit/[id]/route.ts", import.meta.url);
+const phase5MetricsMigrationUrl = new URL(
+  "../../pos-saas-infra/supabase/migrations/20260922055517_phase5_saas_metrics_operations.sql",
+  import.meta.url,
+);
+const platformMetricsRouteUrl = new URL("../src/app/api/v1/platform/metrics/route.ts", import.meta.url);
 
 test("la migración conserva las invariantes críticas de pedidos y caja", async () => {
   const migration = await readFile(migrationUrl, "utf8");
@@ -240,4 +245,26 @@ test("la Fase 4 limita el soporte a concesiones temporales auditables", async ()
   assert.match(accessRoute, /durationMinutes/);
   assert.match(writeRoute, /CONFIRMAR_ACCESO_ESCRITURA/);
   assert.match(revokeRoute, /revocar/);
+});
+
+test("la Fase 5 expone métricas SaaS y errores operativos aislados", async () => {
+  const [migration, metricsRoute, errorRecorder, monitoring] = await Promise.all([
+    readFile(phase5MetricsMigrationUrl, "utf8"),
+    readFile(platformMetricsRouteUrl, "utf8"),
+    readFile(new URL("../src/lib/platform/operational-metrics.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../.github/workflows/saas-monitoring.yml", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(migration, /platform_operation_errors/);
+  assert.match(migration, /get_platform_operational_metrics/);
+  assert.match(migration, /organizationMetrics/);
+  assert.match(migration, /pendingInvitations/);
+  assert.match(migration, /recentErrors/);
+  assert.match(migration, /REVOKE ALL ON FUNCTION public\.get_platform_operational_metrics/);
+  assert.match(metricsRoute, /authenticateApiRequest\(request, \["platform_admin"\]\)/);
+  assert.match(metricsRoute, /organizationId/);
+  assert.match(metricsRoute, /days/);
+  assert.match(errorRecorder, /platform_operation_errors/);
+  assert.match(monitoring, /health\/ready/);
+  assert.match(monitoring, /HEALTH_ALERT_WEBHOOK_URL/);
 });

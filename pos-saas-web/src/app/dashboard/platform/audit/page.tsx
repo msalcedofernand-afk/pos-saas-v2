@@ -141,6 +141,9 @@ export default function PlatformAuditPage() {
           <Link className="button button-small" href="/dashboard/platform">
             Restaurantes
           </Link>
+          <Link className="button button-small" href="/dashboard/platform/metrics">
+            Métricas
+          </Link>
           <Link className="button button-small" href="/dashboard/platform/support">
             Soporte
           </Link>

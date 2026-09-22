@@ -184,6 +184,9 @@ export default function PlatformUsersPage() {
           <Link className="button button-small" href="/dashboard/platform/audit">
             Auditoría
           </Link>
+          <Link className="button button-small" href="/dashboard/platform/metrics">
+            Métricas
+          </Link>
           <Link className="button button-small" href="/dashboard/platform/support">
             Soporte
           </Link>

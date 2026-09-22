@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError } from "@/lib/api/response";
+import { recordPlatformOperationError } from "@/lib/platform/operational-metrics";
 import { runPlatformMembershipAction } from "@/lib/platform/user-actions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { uuid } from "@/lib/validation/rules";
@@ -98,7 +99,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           data: { name: body.name ?? userEmail.split("@")[0] },
           redirectTo: `${webOrigin}/auth/update-password`,
         });
-        if (inviteError || !invited.user) return apiError("No se pudo enviar la invitación", 400);
+        if (inviteError || !invited.user) {
+          await recordPlatformOperationError({
+            actorUserId: auth.user.id,
+            organizationId,
+            source: "platform",
+            operation: "organization_member_invitation",
+            message: inviteError?.message ?? "No se pudo enviar la invitación",
+            details: { invitationForNewUser: true },
+          });
+          return apiError("No se pudo enviar la invitación", 400);
+        }
         userId = invited.user.id;
         createdUserId = userId;
       }

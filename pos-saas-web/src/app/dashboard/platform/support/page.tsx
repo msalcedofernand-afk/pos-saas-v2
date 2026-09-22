@@ -152,6 +152,9 @@ export default function PlatformSupportPage() {
           <Link className="button button-small" href="/dashboard/platform/audit">
             Auditoría
           </Link>
+          <Link className="button button-small" href="/dashboard/platform/metrics">
+            Métricas
+          </Link>
         </div>
       </nav>
       <div className="module-page-heading">

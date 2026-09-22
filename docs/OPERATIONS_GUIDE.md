@@ -2,7 +2,7 @@
 
 Guía funcional y técnica para desarrollar, desplegar y operar el POS SaaS.
 
-> Estado de referencia: Fase 4 en el commit que publique este cambio — 22 de septiembre de 2026.
+> Estado de referencia: Fase 5 en el commit que publique este cambio — 22 de septiembre de 2026.
 
 ## 1. Qué es el sistema
 
@@ -253,7 +253,38 @@ El banner del panel muestra restaurante, modo y vencimiento. Las entradas,
 expiraciones, elevaciones a escritura, revocaciones y acciones autorizadas se
 registran en `platform_audit_logs`.
 
-## 11. Recuperación de contraseña
+## 11. Métricas, salud y operación SaaS
+
+Desde `/dashboard/platform/metrics`, un `platform_admin` puede consultar el
+estado global o seleccionar un restaurante y ver usuarios activos, pedidos,
+ventas agregadas, última actividad e invitaciones pendientes. El periodo puede
+ser de 7, 30 o 90 días.
+
+Endpoint protegido:
+
+```text
+GET /api/v1/platform/metrics?days=30
+GET /api/v1/platform/metrics?organizationId=<id>&days=30
+```
+
+Los fallos de provisioning e invitaciones se guardan en
+`platform_operation_errors`, una tabla interna sin acceso para `anon` ni
+`authenticated`. La pantalla muestra los 20 errores más recientes del periodo
+y permite filtrar por restaurante.
+
+El workflow `SaaS availability monitoring` revisa cada 15 minutos:
+
+```text
+GET https://mesa-clara-api-staging.vercel.app/api/v1/health
+GET https://mesa-clara-api-staging.vercel.app/api/v1/health/ready
+GET https://pos-saas-v2.vercel.app/status
+```
+
+Si se configura el secreto opcional `HEALTH_ALERT_WEBHOOK_URL`, el workflow
+envía una alerta al webhook cuando una comprobación falla. Aunque no se
+configure el webhook, el workflow fallido queda visible en GitHub Actions.
+
+## 12. Recuperación de contraseña
 
 Rutas de la web:
 
@@ -272,7 +303,7 @@ Auth. En Supabase configura:
 Los enlaces enviados por el proveedor SMTP integrado tienen un límite bajo. Si
 se supera, espera al restablecimiento del límite o configura SMTP propio.
 
-## 12. API esencial
+## 13. API esencial
 
 ### Salud
 
@@ -336,7 +367,7 @@ DELETE /api/v1/platform/organizations/:id/members/:userId
 Las rutas protegidas requieren cookies de sesión, organización activa y los
 controles de autorización correspondientes.
 
-## 13. Seguridad operativa
+## 14. Seguridad operativa
 
 - No compartas tokens de recuperación ni URLs con `access_token`.
 - Rota la contraseña si un token fue pegado en un chat o ticket.
@@ -348,7 +379,7 @@ controles de autorización correspondientes.
 - Revisa auditoría después de bootstrap y provisioning.
 - Usa SMTP propio antes de abrir el onboarding a más usuarios.
 
-## 14. Desarrollo local
+## 15. Desarrollo local
 
 API:
 
@@ -385,7 +416,7 @@ npm.cmd test
 npm.cmd run build
 ```
 
-## 15. Despliegue
+## 16. Despliegue
 
 1. Confirma que GitHub contiene el commit esperado.
 2. Despliega la API desde `pos-saas-api`.
@@ -402,7 +433,7 @@ npm.cmd run build
 No consideres terminado un despliegue si solo compila: también debe pasar
 health, readiness, CORS, login, aislamiento por organización y provisioning.
 
-## 16. Resolución de problemas
+## 17. Resolución de problemas
 
 ### `Failed to fetch`
 
@@ -435,7 +466,7 @@ usuario directamente en la tabla de Auth.
 El despliegue tiene protección de Vercel. Inicia sesión en Vercel o revisa la
 política de protección del entorno de staging.
 
-## 17. Decisiones importantes
+## 18. Decisiones importantes
 
 - Se eligió `platform_admin` separado de `admin` para evitar que un restaurante
   pueda administrar todo el SaaS.
@@ -447,7 +478,7 @@ política de protección del entorno de staging.
   autenticación, dominio y despliegue; separar servicios ahora aumentaría el
   costo operativo sin beneficio proporcional.
 
-## 18. Mantenimiento documental
+## 19. Mantenimiento documental
 
 Actualiza esta guía cuando cambien:
 

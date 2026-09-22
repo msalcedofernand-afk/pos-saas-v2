@@ -166,6 +166,36 @@ test.describe("operaciones autenticadas", () => {
     }
   });
 
+  test("métricas SaaS globales y aislamiento por restaurante", async ({ request }) => {
+    const targetOrganizationId = process.env.E2E_PLATFORM_TARGET_ORGANIZATION_ID;
+    if (!platformCredentials.email || !platformCredentials.password || !targetOrganizationId) {
+      test.skip(true, "Configura E2E_PLATFORM_EMAIL, E2E_PLATFORM_PASSWORD y E2E_PLATFORM_TARGET_ORGANIZATION_ID");
+      return;
+    }
+    const platform = await login(request, platformCredentials);
+    requireOrSkip(platform.data.roles.includes("platform_admin"), "La cuenta E2E global debe tener platform_admin");
+
+    const globalResponse = await request.get(`${apiUrl}/api/v1/platform/metrics?days=30`);
+    expect(globalResponse.status(), await globalResponse.text()).toBe(200);
+    const globalMetrics = (await globalResponse.json()).data as {
+      organizations: { total: number };
+      organizationMetrics: Array<{ organizationId: string }>;
+    };
+    expect(globalMetrics.organizations.total).toBeGreaterThanOrEqual(1);
+    expect(globalMetrics.organizationMetrics.some((item) => item.organizationId === targetOrganizationId)).toBe(true);
+
+    const scopedResponse = await request.get(
+      `${apiUrl}/api/v1/platform/metrics?organizationId=${encodeURIComponent(targetOrganizationId)}&days=30`,
+    );
+    expect(scopedResponse.status(), await scopedResponse.text()).toBe(200);
+    const scopedMetrics = (await scopedResponse.json()).data as {
+      organizationMetrics: Array<{ organizationId: string }>;
+      recentErrors: unknown[];
+    };
+    expect(scopedMetrics.organizationMetrics).toHaveLength(globalMetrics.organizationMetrics.length);
+    expect(scopedMetrics.recentErrors).toBeInstanceOf(Array);
+  });
+
   test("acceso temporal de soporte inicia lectura y puede revocarse", async ({ request }) => {
     const targetOrganizationId = process.env.E2E_PLATFORM_TARGET_ORGANIZATION_ID;
     if (!platformCredentials.email || !platformCredentials.password || !targetOrganizationId) {

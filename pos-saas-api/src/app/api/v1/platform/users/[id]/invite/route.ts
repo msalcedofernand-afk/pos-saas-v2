@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError } from "@/lib/api/response";
+import { recordPlatformOperationError } from "@/lib/platform/operational-metrics";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { uuid } from "@/lib/validation/rules";
 
@@ -23,7 +24,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       data: { name: user.name },
       redirectTo: `${webOrigin}/auth/update-password`,
     });
-    if (error || !data.user) return apiError("No se pudo reenviar la invitación", 400);
+    if (error || !data.user) {
+      await recordPlatformOperationError({
+        actorUserId: auth.user.id,
+        source: "platform",
+        operation: "user_invitation_resend",
+        message: error?.message ?? "No se pudo reenviar la invitación",
+        details: { targetUserId: userId },
+      });
+      return apiError("No se pudo reenviar la invitación", 400);
+    }
     const { error: auditError } = await db.from("platform_audit_logs").insert({
       actor_user_id: auth.user.id,
       action: "user_invitation_resent",

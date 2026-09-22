@@ -796,6 +796,57 @@ export type Database = {
           },
         ];
       };
+      platform_operation_errors: {
+        Row: {
+          actor_user_id: string | null;
+          details: Json;
+          id: string;
+          message: string;
+          occurred_at: string;
+          operation: string;
+          organization_id: string | null;
+          severity: string;
+          source: string;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          details?: Json;
+          id?: string;
+          message: string;
+          occurred_at?: string;
+          operation: string;
+          organization_id?: string | null;
+          severity?: string;
+          source: string;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          details?: Json;
+          id?: string;
+          message?: string;
+          occurred_at?: string;
+          operation?: string;
+          organization_id?: string | null;
+          severity?: string;
+          source?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_operation_errors_actor_user_id_fkey";
+            columns: ["actor_user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "platform_operation_errors_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       platform_organization_action_requests: {
         Row: {
           action: string;
@@ -1689,6 +1740,15 @@ export type Database = {
       };
       get_dashboard_metrics: {
         Args: { p_end: string; p_organization_id: string; p_start: string };
+        Returns: Json;
+      };
+      get_platform_operational_metrics: {
+        Args: {
+          p_actor_user_id: string;
+          p_organization_id?: string | null;
+          p_since?: string;
+          p_until?: string | null;
+        };
         Returns: Json;
       };
       get_kitchen_summary: {

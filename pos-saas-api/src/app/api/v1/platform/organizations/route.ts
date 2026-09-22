@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateApiRequest } from "@/lib/auth/api";
 import { apiError, handleApiError } from "@/lib/api/response";
+import { recordPlatformOperationError } from "@/lib/platform/operational-metrics";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const createOrganizationSchema = z.object({
@@ -171,6 +172,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(responsePayload, { status: 201 });
   } catch (error) {
+    await recordPlatformOperationError({
+      actorUserId,
+      organizationId: createdOrganizationId,
+      source: "platform",
+      operation: "organization_provisioning",
+      message: error instanceof Error ? error.message : "No se pudo completar el alta de la organización",
+      details: { requestClaimed: Boolean(idempotencyKey), organizationCreated: Boolean(createdOrganizationId) },
+    });
     if (createdOrganizationId && cleanupDb)
       await cleanupDb.from("organizations").delete().eq("id", createdOrganizationId);
     if (createdUserId && cleanupDb) await cleanupDb.auth.admin.deleteUser(createdUserId);
