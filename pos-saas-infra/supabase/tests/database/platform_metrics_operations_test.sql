@@ -42,6 +42,18 @@ SELECT is(
 
 SET LOCAL ROLE service_role;
 
+SELECT is(
+  has_table_privilege('anon', 'public.platform_operation_errors', 'select'),
+  false,
+  'anon no puede leer errores operativos'
+);
+
+SELECT is(
+  has_table_privilege('service_role', 'public.platform_operation_errors', 'select'),
+  true,
+  'service_role puede leer errores operativos'
+);
+
 SELECT lives_ok($$SELECT public.get_platform_operational_metrics(
   '00000000-0000-0000-0000-000000000901', NULL, now() - interval '30 days', now()
 )$$, 'service_role puede consultar métricas globales');
