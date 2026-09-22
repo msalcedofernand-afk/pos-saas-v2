@@ -1637,11 +1637,171 @@ export type Database = {
         };
         Relationships: [];
       };
+      platform_billing_events: {
+        Row: {
+          id: string;
+          provider: string;
+          external_event_id: string;
+          event_type: string;
+          organization_id: string | null;
+          payload: Json;
+          status: string;
+          received_at: string;
+          processed_at: string | null;
+          error_message: string | null;
+        };
+        Insert: {
+          id?: string;
+          provider?: string;
+          external_event_id: string;
+          event_type: string;
+          organization_id?: string | null;
+          payload?: Json;
+          status?: string;
+          received_at?: string;
+          processed_at?: string | null;
+          error_message?: string | null;
+        };
+        Update: {
+          id?: string;
+          provider?: string;
+          external_event_id?: string;
+          event_type?: string;
+          organization_id?: string | null;
+          payload?: Json;
+          status?: string;
+          received_at?: string;
+          processed_at?: string | null;
+          error_message?: string | null;
+        };
+        Relationships: [];
+      };
+      platform_incidents: {
+        Row: {
+          id: string;
+          organization_id: string | null;
+          opened_by: string;
+          title: string;
+          summary: string;
+          severity: string;
+          status: string;
+          started_at: string;
+          resolved_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id?: string | null;
+          opened_by: string;
+          title: string;
+          summary: string;
+          severity?: string;
+          status?: string;
+          started_at?: string;
+          resolved_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string | null;
+          opened_by?: string;
+          title?: string;
+          summary?: string;
+          severity?: string;
+          status?: string;
+          started_at?: string;
+          resolved_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      platform_ticket_comments: {
+        Row: {
+          id: string;
+          ticket_id: string;
+          author_user_id: string;
+          body: string;
+          internal: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          ticket_id: string;
+          author_user_id: string;
+          body: string;
+          internal?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          ticket_id?: string;
+          author_user_id?: string;
+          body?: string;
+          internal?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      platform_tickets: {
+        Row: {
+          id: string;
+          organization_id: string | null;
+          requester_user_id: string;
+          assigned_user_id: string | null;
+          subject: string;
+          description: string;
+          priority: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+          resolved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          organization_id?: string | null;
+          requester_user_id: string;
+          assigned_user_id?: string | null;
+          subject: string;
+          description: string;
+          priority?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+          resolved_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string | null;
+          requester_user_id?: string;
+          assigned_user_id?: string | null;
+          subject?: string;
+          description?: string;
+          priority?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+          resolved_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
+      process_platform_billing_event: {
+        Args: {
+          p_event_type: string;
+          p_external_event_id: string;
+          p_organization_id: string | null;
+          p_payload: Json;
+          p_provider: string;
+        };
+        Returns: Json;
+      };
       create_platform_support_access: {
         Args: {
           p_actor_user_id: string;

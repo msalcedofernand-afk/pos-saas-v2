@@ -126,6 +126,12 @@ export default function PlatformPage() {
           <Link className="button button-small" href="/dashboard/platform/support">
             Soporte
           </Link>
+          <Link className="button button-small" href="/dashboard/platform/tickets">
+            Tickets
+          </Link>
+          <Link className="button button-small" href="/dashboard/platform/incidents">
+            Incidentes
+          </Link>
           <button className="button button-small" onClick={() => void logout()} type="button">
             Salir
           </button>
