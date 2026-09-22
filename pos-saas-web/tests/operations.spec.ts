@@ -192,7 +192,8 @@ test.describe("operaciones autenticadas", () => {
       organizationMetrics: Array<{ organizationId: string }>;
       recentErrors: unknown[];
     };
-    expect(scopedMetrics.organizationMetrics).toHaveLength(globalMetrics.organizationMetrics.length);
+    expect(scopedMetrics.organizationMetrics).toHaveLength(1);
+    expect(scopedMetrics.organizationMetrics[0]?.organizationId).toBe(targetOrganizationId);
     expect(scopedMetrics.recentErrors).toBeInstanceOf(Array);
   });
 

@@ -11,12 +11,17 @@ Carpeta local para los recursos compartidos de infraestructura y configuraciones
 - `supabase/tests/database`: pruebas pgTAP de seguridad, aislamiento, idempotencia
   e integridad de pedidos/caja.
 - `scripts/test-concurrency.sh`: prueba de concurrencia para ocupar una mesa.
+- `scripts/backup-and-restore.mjs`: backup con manifest/hash y restauración
+  verificada únicamente hacia un proyecto de prueba distinto.
 
 La CLI de Supabase está fijada en la versión `2.117.0` para que CI no dependa de
 la resolución de `latest` ni de los límites del endpoint de releases.
 
 El workflow `API and database checks` valida nombres y orden de migraciones,
 reset completo, pruebas SQL, concurrencia y lint de la base de datos.
+
+El workflow manual `Phase 6 backup and restore drill` ejecuta el simulacro
+real usando secretos de un origen y un proyecto de prueba separados.
 
 La web, Android y otros clientes no deben importar nada de esta carpeta. Sólo la API administra la base de datos.
 

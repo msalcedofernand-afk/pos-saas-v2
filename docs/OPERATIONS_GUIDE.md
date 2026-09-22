@@ -2,7 +2,7 @@
 
 Guía funcional y técnica para desarrollar, desplegar y operar el POS SaaS.
 
-> Estado de referencia: Fase 5 en el commit que publique este cambio — 22 de septiembre de 2026.
+> Estado de referencia: Fase 6 en el commit que publique este cambio — 22 de septiembre de 2026.
 
 ## 1. Qué es el sistema
 
@@ -491,3 +491,21 @@ Actualiza esta guía cuando cambien:
 
 Cada cambio de seguridad o autenticación debe incluir una prueba y una nota en
 esta documentación antes de publicarse.
+
+## 20. Fase 6: calidad operativa y recuperación
+
+La guía completa de backups, restauración, rollback, monitoreo permanente,
+incidentes, matriz E2E y recuperación de organizaciones está en
+[`docs/PHASE6_OPERATIONS.md`](./PHASE6_OPERATIONS.md).
+
+Los workflows relacionados son:
+
+```text
+.github/workflows/phase6-release-gate.yml
+.github/workflows/phase6-backup-restore.yml
+.github/workflows/saas-monitoring.yml
+```
+
+El simulacro de restauración exige un proyecto Supabase de prueba diferente al
+origen y `PHASE6_RESTORE_CONFIRMATION=RESTORE_TO_TEST_ONLY`. No se permite
+restaurar producción desde CI.

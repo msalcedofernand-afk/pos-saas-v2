@@ -1,0 +1,70 @@
+name: Phase 6 backup and restore drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_project_ref:
+        description: Supabase project-ref de origen (no lo pegues en logs)
+        required: true
+        type: string
+      target_project_ref:
+        description: Supabase project-ref desechable de prueba
+        required: true
+        type: string
+      migration:
+        description: Migración o commit que motiva el backup
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  restore-drill:
+    runs-on: ubuntu-latest
+    environment: backup-restore
+    timeout-minutes: 30
+    env:
+      SOURCE_DATABASE_URL: ${{ secrets.SOURCE_DATABASE_URL }}
+      TARGET_DATABASE_URL: ${{ secrets.TARGET_DATABASE_URL }}
+      PHASE6_RESTORE_CONFIRMATION: ${{ secrets.PHASE6_RESTORE_CONFIRMATION }}
+      PHASE6_MIGRATION: ${{ inputs.migration }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: pos-saas-infra/package-lock.json
+      - run: npm ci
+        working-directory: pos-saas-infra
+      - name: Validate protected restore inputs
+        shell: bash
+        env:
+          SOURCE_PROJECT_REF: ${{ inputs.source_project_ref }}
+          TARGET_PROJECT_REF: ${{ inputs.target_project_ref }}
+        run: |
+          set -euo pipefail
+          test -n "$SOURCE_DATABASE_URL"
+          test -n "$TARGET_DATABASE_URL"
+          test "$PHASE6_RESTORE_CONFIRMATION" = "RESTORE_TO_TEST_ONLY"
+          test "$SOURCE_PROJECT_REF" != "$TARGET_PROJECT_REF"
+      - name: Backup and restore to the disposable target
+        shell: bash
+        env:
+          SOURCE_PROJECT_REF: ${{ inputs.source_project_ref }}
+          TARGET_PROJECT_REF: ${{ inputs.target_project_ref }}
+        run: |
+          set -euo pipefail
+          backup_dir="$RUNNER_TEMP/phase6-backup"
+          node scripts/backup-and-restore.mjs --mode backup \
+            --source-project-ref "$SOURCE_PROJECT_REF" --output-dir "$backup_dir"
+          node scripts/backup-and-restore.mjs --mode restore \
+            --target-project-ref "$TARGET_PROJECT_REF" --backup-dir "$backup_dir"
+      - name: Upload backup and restore evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase6-backup-restore-evidence
+          path: ${{ runner.temp }}/phase6-backup
+          if-no-files-found: warn

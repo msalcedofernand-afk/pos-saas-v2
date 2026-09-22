@@ -37,7 +37,7 @@ jobs:
       - name: Validate required deployment secrets
         shell: bash
         run: |
-          required=(PLAYWRIGHT_BASE_URL PLAYWRIGHT_API_URL E2E_EMAIL E2E_PASSWORD E2E_ADMIN_EMAIL E2E_ADMIN_PASSWORD E2E_RESTRICTED_EMAIL E2E_RESTRICTED_PASSWORD)
+          required=(PLAYWRIGHT_BASE_URL PLAYWRIGHT_API_URL E2E_EMAIL E2E_PASSWORD E2E_ADMIN_EMAIL E2E_ADMIN_PASSWORD E2E_RESTRICTED_EMAIL E2E_RESTRICTED_PASSWORD E2E_PLATFORM_EMAIL E2E_PLATFORM_PASSWORD E2E_PLATFORM_TARGET_ORGANIZATION_ID E2E_PLATFORM_TARGET_USER_ID)
           for name in "${required[@]}"; do
             if [ -z "${!name}" ]; then
               echo "Missing required repository secret: $name"

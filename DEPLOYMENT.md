@@ -1,5 +1,9 @@
 # Despliegue de POS SaaS
 
+La operación de Fase 6 está documentada en
+[`docs/PHASE6_OPERATIONS.md`](docs/PHASE6_OPERATIONS.md). El despliegue no se
+considera válido sin backup verificable, gate operativo y evidencia archivada.
+
 El primer despliegue debe hacerse en staging, con un proyecto Supabase separado
 y usuarios de prueba. No uses cuentas ni datos de producción para E2E.
 
@@ -92,6 +96,10 @@ monitoring del proveedor) con estas comprobaciones:
 No uses una comprobación desde el mismo servidor de Vercel como único monitor:
 el objetivo es detectar también problemas de red, DNS o proveedor.
 
+El workflow `SaaS availability monitoring` mantiene además comprobaciones cada
+15 minutos para staging y producción cuando se configuran `STAGING_API_URL`,
+`STAGING_WEB_URL`, `PRODUCTION_API_URL` y `PRODUCTION_WEB_URL` en GitHub.
+
 ## Backup y restauración
 
 Antes de la primera migración de producción crea un backup descargable y
@@ -113,6 +121,11 @@ psql "$env:RESTORE_DATABASE_URL" --file backups/production-YYYYMMDD.sql
 La prueba sólo cuenta como backup válido si se puede restaurar y consultar el
 esquema y los datos esenciales.
 
+Para el procedimiento reproducible con manifest, hash y comparación de conteos
+usa `pos-saas-infra/scripts/backup-and-restore.mjs`. El workflow manual
+`Phase 6 backup and restore drill` exige un destino de prueba distinto y
+genera la evidencia de restauración.
+
 ## Rollback
 
 Para código:
@@ -126,3 +139,7 @@ corrección compatible, publica una nueva migración hacia adelante. Si existe
 pérdida o corrupción de datos, detén escrituras, restaura el backup probado en
 un proyecto de recuperación y coordina el cambio antes de reemplazar la base
 de producción.
+
+Cada ejecución debe conservar el artefacto `phase6-release-evidence` y, si hubo
+incidente, un registro basado en
+[`docs/incidents/INCIDENT_TEMPLATE.md`](docs/incidents/INCIDENT_TEMPLATE.md).

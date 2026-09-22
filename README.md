@@ -12,6 +12,7 @@ Nueva base del POS SaaS, separada del proyecto legacy.
 
 - [Guía completa de operación, autenticación, plataforma y troubleshooting](docs/OPERATIONS_GUIDE.md).
 - [Guía de despliegue, health checks, monitoreo, backup y rollback](DEPLOYMENT.md).
+- [Runbook de Fase 6: backup, restauración, rollback, incidentes y evidencia](docs/PHASE6_OPERATIONS.md).
 - [Matriz de validación en frontend, API y base de datos](VALIDATION.md).
 - [Política de seguridad y reporte de incidentes](SECURITY.md).
 - [Documentación de la web y sus pruebas](pos-saas-web/README.md).
