@@ -2,7 +2,7 @@
 
 Guía funcional y técnica para desarrollar, desplegar y operar el POS SaaS.
 
-> Estado de referencia: commit `5b4f945` — 21 de septiembre de 2026.
+> Estado de referencia: Fase 1 en el commit que publique este cambio — 22 de septiembre de 2026.
 
 ## 1. Qué es el sistema
 
@@ -46,7 +46,7 @@ Directorios principales:
 
 | Superficie | URL |
 |---|---|
-| Web publicada | `https://pos-saas-v2-2j2jbx4v2-fms7w7.vercel.app` |
+| Web publicada | `https://pos-saas-v2.vercel.app` |
 | API de staging | `https://mesa-clara-api-staging.vercel.app` |
 | Supabase staging | proyecto `vxdwguoguxxypesviais` |
 | Web local | `http://localhost:3001` |
@@ -140,7 +140,42 @@ Si falla un paso, elimina los recursos provisionales y registra auditoría de
 error. No se debe repetir el formulario rápidamente; el cliente ya envía una
 clave de idempotencia para proteger contra doble envío.
 
-## 7. Recuperación de contraseña
+## 7. Administrar una organización
+
+El panel global permite buscar por nombre, slug y estado desde:
+
+```text
+/dashboard/platform/organizations
+```
+
+El detalle administrativo está disponible en:
+
+```text
+/dashboard/platform/organizations/<organization-id>
+```
+
+Endpoints protegidos exclusivamente con `platform_admin`:
+
+```text
+GET   /api/v1/platform/organizations
+GET   /api/v1/platform/organizations/:id
+PATCH /api/v1/platform/organizations/:id
+POST  /api/v1/platform/organizations/:id/suspend
+POST  /api/v1/platform/organizations/:id/reactivate
+```
+
+La lista acepta `search` y `status`. El detalle muestra administrador
+principal, usuarios, productos, pedidos recientes y actividad. Las acciones
+de nombre, suspensión y reactivación requieren `Idempotency-Key`.
+
+Suspender cambia `status` a `suspended` e `is_active` a `false`; no elimina
+productos, pedidos, usuarios ni movimientos. El acceso operativo queda
+bloqueado porque la autenticación exige una organización activa. Reactivar
+restaura el acceso y limpia los datos de suspensión. Cada cambio real genera
+un evento en `platform_audit_logs`; repetir la misma solicitud devuelve la
+respuesta guardada sin duplicar auditoría.
+
+## 8. Recuperación de contraseña
 
 Rutas de la web:
 
@@ -159,7 +194,7 @@ Auth. En Supabase configura:
 Los enlaces enviados por el proveedor SMTP integrado tienen un límite bajo. Si
 se supera, espera al restablecimiento del límite o configura SMTP propio.
 
-## 8. API esencial
+## 9. API esencial
 
 ### Salud
 
@@ -184,6 +219,10 @@ GET  /api/v1/auth/csrf
 ```text
 GET  /api/v1/platform/organizations
 POST /api/v1/platform/organizations
+GET  /api/v1/platform/organizations/:id
+PATCH /api/v1/platform/organizations/:id
+POST /api/v1/platform/organizations/:id/suspend
+POST /api/v1/platform/organizations/:id/reactivate
 GET  /api/v1/organizations
 ```
 
@@ -206,7 +245,7 @@ GET  /api/v1/organizations
 Las rutas protegidas requieren cookies de sesión, organización activa y los
 controles de autorización correspondientes.
 
-## 9. Seguridad operativa
+## 10. Seguridad operativa
 
 - No compartas tokens de recuperación ni URLs con `access_token`.
 - Rota la contraseña si un token fue pegado en un chat o ticket.
@@ -218,7 +257,7 @@ controles de autorización correspondientes.
 - Revisa auditoría después de bootstrap y provisioning.
 - Usa SMTP propio antes de abrir el onboarding a más usuarios.
 
-## 10. Desarrollo local
+## 11. Desarrollo local
 
 API:
 
@@ -255,7 +294,7 @@ npm.cmd test
 npm.cmd run build
 ```
 
-## 11. Despliegue
+## 12. Despliegue
 
 1. Confirma que GitHub contiene el commit esperado.
 2. Despliega la API desde `pos-saas-api`.
@@ -272,7 +311,7 @@ npm.cmd run build
 No consideres terminado un despliegue si solo compila: también debe pasar
 health, readiness, CORS, login, aislamiento por organización y provisioning.
 
-## 12. Resolución de problemas
+## 13. Resolución de problemas
 
 ### `Failed to fetch`
 
@@ -305,7 +344,7 @@ usuario directamente en la tabla de Auth.
 El despliegue tiene protección de Vercel. Inicia sesión en Vercel o revisa la
 política de protección del entorno de staging.
 
-## 13. Decisiones importantes
+## 14. Decisiones importantes
 
 - Se eligió `platform_admin` separado de `admin` para evitar que un restaurante
   pueda administrar todo el SaaS.
@@ -317,7 +356,7 @@ política de protección del entorno de staging.
   autenticación, dominio y despliegue; separar servicios ahora aumentaría el
   costo operativo sin beneficio proporcional.
 
-## 14. Mantenimiento documental
+## 15. Mantenimiento documental
 
 Actualiza esta guía cuando cambien:
 

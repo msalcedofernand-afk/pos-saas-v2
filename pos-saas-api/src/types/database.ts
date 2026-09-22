@@ -595,27 +595,60 @@ export type Database = {
           created_at: string;
           id: string;
           is_active: boolean;
+          last_activity_at: string | null;
           name: string;
+          owner_user_id: string | null;
           slug: string;
+          status: string;
+          suspended_at: string | null;
+          suspended_by: string | null;
+          suspension_reason: string | null;
           updated_at: string;
         };
         Insert: {
           created_at?: string;
           id?: string;
           is_active?: boolean;
+          last_activity_at?: string | null;
           name: string;
+          owner_user_id?: string | null;
           slug: string;
+          status?: string;
+          suspended_at?: string | null;
+          suspended_by?: string | null;
+          suspension_reason?: string | null;
           updated_at?: string;
         };
         Update: {
           created_at?: string;
           id?: string;
           is_active?: boolean;
+          last_activity_at?: string | null;
           name?: string;
+          owner_user_id?: string | null;
           slug?: string;
+          status?: string;
+          suspended_at?: string | null;
+          suspended_by?: string | null;
+          suspension_reason?: string | null;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "organizations_owner_user_id_fkey";
+            columns: ["owner_user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "organizations_suspended_by_fkey";
+            columns: ["suspended_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       platform_audit_logs: {
         Row: {
@@ -654,6 +687,57 @@ export type Database = {
             columns: ["actor_user_id"];
             isOneToOne: false;
             referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      platform_organization_action_requests: {
+        Row: {
+          action: string;
+          actor_user_id: string;
+          created_at: string;
+          idempotency_key: string;
+          organization_id: string;
+          request_hash: string;
+          response: Json | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          action: string;
+          actor_user_id: string;
+          created_at?: string;
+          idempotency_key: string;
+          organization_id: string;
+          request_hash: string;
+          response?: Json | null;
+          status: string;
+          updated_at?: string;
+        };
+        Update: {
+          action?: string;
+          actor_user_id?: string;
+          created_at?: string;
+          idempotency_key?: string;
+          organization_id?: string;
+          request_hash?: string;
+          response?: Json | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_organization_action_requests_actor_user_id_fkey";
+            columns: ["actor_user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "platform_organization_action_requests_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
             referencedColumns: ["id"];
           },
         ];
@@ -1402,6 +1486,18 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      apply_platform_organization_action: {
+        Args: {
+          p_action: string;
+          p_actor_user_id: string;
+          p_idempotency_key: string;
+          p_name?: string | null;
+          p_organization_id: string;
+          p_reason?: string | null;
+          p_request_hash: string;
+        };
+        Returns: Json;
+      };
       check_login_rate_limit: {
         Args: {
           p_lock_seconds?: number;

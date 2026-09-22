@@ -230,6 +230,21 @@ h1 { font-size: clamp(40px, 6vw, 72px); letter-spacing: -0.07em; line-height: 0.
 .platform-context-banner > div { display: grid; gap: 3px; }
 .platform-context-banner strong { color: var(--ink); font-size: 14px; }
 .platform-context-banner small { color: #625b80; font-size: 11px; }
+.organization-detail-grid { display: grid; gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; }
+.organization-search-controls { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) 180px; margin-top: 16px; }
+.organization-detail-form, .organization-action-form { display: grid; gap: 12px; margin-top: 16px; }
+.organization-facts { border-top: 1px solid var(--line); display: grid; gap: 10px; margin: 20px 0 0; padding-top: 16px; }
+.organization-facts div { display: flex; justify-content: space-between; gap: 12px; }
+.organization-facts dt { color: var(--muted); font-size: 12px; }
+.organization-facts dd { color: var(--ink); font-size: 12px; margin: 0; text-align: right; }
+.organization-metrics { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 18px; }
+.organization-metrics > div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 6px; padding: 16px; }
+.organization-metrics span { color: var(--muted); font-size: 12px; }
+.organization-metrics strong { color: var(--ink); font-size: 24px; }
+.organization-list { display: grid; gap: 8px; margin-top: 16px; }
+.organization-list > div { border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; padding-top: 10px; }
+.organization-list strong { color: var(--ink); font-size: 12px; }
+.organization-list span { color: var(--muted); font-size: 11px; text-align: right; }
 .settings-users { display: grid; gap: 6px; margin-top: 16px; }
 .settings-user { align-items: center; background: transparent; border: 1px solid transparent; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; padding: 11px; text-align: left; }
 .settings-user:hover, .settings-user.selected { background: #eef2ff; border-color: #c7d2fe; }
@@ -719,4 +734,8 @@ body { background: var(--soft); color: var(--ink); }
   .app-content .dashboard-topbar { margin-top: 12px; }
   .app-content .dashboard-welcome { padding-top: 24px; }
   .platform-context-banner { align-items: stretch; flex-direction: column; gap: 12px; }
+  .organization-detail-grid, .organization-metrics { grid-template-columns: 1fr; }
+  .organization-search-controls { grid-template-columns: 1fr; }
+  .organization-facts div, .organization-list > div { align-items: flex-start; flex-direction: column; }
+  .organization-list span, .organization-facts dd { text-align: left; }
 }

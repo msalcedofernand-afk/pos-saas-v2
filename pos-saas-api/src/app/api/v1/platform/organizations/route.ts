@@ -34,10 +34,22 @@ export async function GET(request: NextRequest) {
     const auth = await authenticateApiRequest(request, ["platform_admin"]);
     if (auth.response) return auth.response;
 
-    const { data, error } = await createAdminClient()
+    const search = request.nextUrl.searchParams.get("search")?.trim().slice(0, 80) ?? "";
+    const status = request.nextUrl.searchParams.get("status")?.trim() ?? "";
+    if (status && !["active", "suspended", "pending", "archived"].includes(status)) {
+      return apiError("Estado de organización inválido", 400);
+    }
+
+    let query = createAdminClient()
       .from("organizations")
-      .select("id, name, slug, is_active, created_at, updated_at")
+      .select(
+        "id, name, slug, is_active, status, suspended_at, suspended_by, suspension_reason, owner_user_id, last_activity_at, created_at, updated_at",
+      )
       .order("created_at", { ascending: false });
+    if (status) query = query.eq("status", status);
+    const safeSearch = search.replace(/[^\p{L}\p{N}\s-]/gu, " ").trim();
+    if (safeSearch) query = query.or(`name.ilike.%${safeSearch}%,slug.ilike.%${safeSearch}%`);
+    const { data, error } = await query;
     if (error) throw error;
     return NextResponse.json({ data: data ?? [] });
   } catch (error) {
@@ -114,8 +126,10 @@ export async function POST(request: NextRequest) {
 
     const { data: organization, error: createOrganizationError } = await db
       .from("organizations")
-      .insert({ name: body.name, slug: body.slug })
-      .select("id, name, slug, is_active, created_at, updated_at")
+      .insert({ name: body.name, slug: body.slug, owner_user_id: createdUserId })
+      .select(
+        "id, name, slug, is_active, status, suspended_at, suspended_by, suspension_reason, owner_user_id, last_activity_at, created_at, updated_at",
+      )
       .single();
     if (createOrganizationError || !organization) throw createOrganizationError ?? new Error("Organización no creada");
     createdOrganizationId = organization.id;

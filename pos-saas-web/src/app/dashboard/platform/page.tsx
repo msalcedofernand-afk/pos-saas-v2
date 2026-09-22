@@ -10,6 +10,9 @@ type Organization = {
   name: string;
   slug: string;
   is_active: boolean;
+  status: "active" | "suspended" | "pending" | "archived";
+  suspended_at: string | null;
+  suspension_reason: string | null;
   created_at: string;
 };
 
@@ -30,6 +33,8 @@ export default function PlatformPage() {
   const [slug, setSlug] = useState("");
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [contextLoadingId, setContextLoadingId] = useState<string | null>(null);
@@ -38,7 +43,11 @@ export default function PlatformPage() {
 
   const loadOrganizations = useCallback(async () => {
     try {
-      const response = await apiFetch<{ data: Organization[] }>("/api/v1/platform/organizations");
+      const query = new URLSearchParams();
+      if (search.trim()) query.set("search", search.trim());
+      if (statusFilter) query.set("status", statusFilter);
+      const suffix = query.toString() ? `?${query.toString()}` : "";
+      const response = await apiFetch<{ data: Organization[] }>(`/api/v1/platform/organizations${suffix}`);
       setOrganizations(response.data);
       setError(null);
     } catch (cause) {
@@ -48,7 +57,7 @@ export default function PlatformPage() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, search, statusFilter]);
 
   useEffect(() => {
     clearOrganizationContext();
@@ -177,6 +186,25 @@ export default function PlatformPage() {
             </div>
             <strong>{organizations.length}</strong>
           </div>
+          <div className="organization-search-controls">
+            <input
+              aria-label="Buscar organización"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por nombre o slug"
+              value={search}
+            />
+            <select
+              aria-label="Filtrar por estado"
+              onChange={(event) => setStatusFilter(event.target.value)}
+              value={statusFilter}
+            >
+              <option value="">Todos los estados</option>
+              <option value="active">Activas</option>
+              <option value="suspended">Suspendidas</option>
+              <option value="pending">Pendientes</option>
+              <option value="archived">Archivadas</option>
+            </select>
+          </div>
           {loading ? (
             <p className="empty-state">Cargando organizaciones...</p>
           ) : organizations.length === 0 ? (
@@ -190,7 +218,15 @@ export default function PlatformPage() {
                     <small>{organization.slug}</small>
                   </div>
                   <div className="platform-organization-actions">
-                    <span className="status-pill available">Activa</span>
+                    <span className={`status-pill ${organization.status === "active" ? "available" : "unavailable"}`}>
+                      {organization.status === "active" ? "Activa" : organization.status}
+                    </span>
+                    <Link
+                      className="button button-small button-secondary"
+                      href={`/dashboard/platform/organizations/${organization.id}`}
+                    >
+                      Ver detalle
+                    </Link>
                     <button
                       className="button button-small button-secondary"
                       disabled={contextLoadingId !== null}

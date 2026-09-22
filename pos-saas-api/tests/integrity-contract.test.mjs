@@ -22,6 +22,27 @@ const platformSecurityMigrationUrl = new URL(
 );
 const platformRouteUrl = new URL("../src/app/api/v1/platform/organizations/route.ts", import.meta.url);
 const platformContextRouteUrl = new URL("../src/app/api/v1/platform/context/route.ts", import.meta.url);
+const platformOrganizationRouteUrl = new URL("../src/app/api/v1/platform/organizations/route.ts", import.meta.url);
+const platformOrganizationDetailRouteUrl = new URL(
+  "../src/app/api/v1/platform/organizations/[id]/route.ts",
+  import.meta.url,
+);
+const platformOrganizationSuspendRouteUrl = new URL(
+  "../src/app/api/v1/platform/organizations/[id]/suspend/route.ts",
+  import.meta.url,
+);
+const platformOrganizationReactivateRouteUrl = new URL(
+  "../src/app/api/v1/platform/organizations/[id]/reactivate/route.ts",
+  import.meta.url,
+);
+const organizationLifecycleMigrationUrl = new URL(
+  "../../pos-saas-infra/supabase/migrations/20260922034230_phase1_organization_lifecycle.sql",
+  import.meta.url,
+);
+const organizationActionsMigrationUrl = new URL(
+  "../../pos-saas-infra/supabase/migrations/20260922034517_phase1_organization_actions.sql",
+  import.meta.url,
+);
 const platformContextMigrationUrl = new URL(
   "../../pos-saas-infra/supabase/migrations/20260922032040_phase0_explicit_platform_context.sql",
   import.meta.url,
@@ -94,4 +115,28 @@ test("el administrador global debe seleccionar el contexto operativo", async () 
   assert.doesNotMatch(auth, /order\("created_at", \{ ascending: true \}\)\.limit\(1\)/);
   assert.match(contextRoute, /platform_organization_context_selected/);
   assert.match(contextRoute, /authenticateApiRequest\(request, \["platform_admin"\]\)/);
+});
+
+test("la administración global de organizaciones es reversible y auditable", async () => {
+  const [listRoute, detailRoute, suspendRoute, reactivateRoute, lifecycleMigration, actionsMigration] =
+    await Promise.all([
+      readFile(platformOrganizationRouteUrl, "utf8"),
+      readFile(platformOrganizationDetailRouteUrl, "utf8"),
+      readFile(platformOrganizationSuspendRouteUrl, "utf8"),
+      readFile(platformOrganizationReactivateRouteUrl, "utf8"),
+      readFile(organizationLifecycleMigrationUrl, "utf8"),
+      readFile(organizationActionsMigrationUrl, "utf8"),
+    ]);
+
+  assert.match(listRoute, /platform_admin/);
+  assert.match(listRoute, /status/);
+  assert.match(detailRoute, /metrics/);
+  assert.match(detailRoute, /platform_admin/);
+  assert.match(suspendRoute, /runPlatformOrganizationAction/);
+  assert.match(reactivateRoute, /runPlatformOrganizationAction/);
+  assert.match(lifecycleMigration, /organizations_status_active_consistency_check/);
+  assert.match(lifecycleMigration, /platform_organization_action_requests/);
+  assert.match(actionsMigration, /organization_suspended/);
+  assert.match(actionsMigration, /organization_reactivated/);
+  assert.match(actionsMigration, /REVOKE ALL ON FUNCTION public\.apply_platform_organization_action/);
 });

@@ -113,7 +113,7 @@ jobs:
           supabase test db --local 2>&1 | tee "$RUNNER_TEMP/supabase-test-db.log" || test_status=$?
           if [ "$test_status" -ne 0 ]; then
             direct_status=0
-            for test_file in order_cash_integrity_test.sql tenant_isolation_test.sql auth_security_test.sql idempotency_test.sql role_transaction_test.sql input_constraints_test.sql; do
+            for test_file in order_cash_integrity_test.sql tenant_isolation_test.sql auth_security_test.sql idempotency_test.sql role_transaction_test.sql input_constraints_test.sql organization_lifecycle_test.sql; do
               docker run --rm --network host \
                 -e PGPASSWORD=postgres \
                 -v "$GITHUB_WORKSPACE/pos-saas-infra/supabase/tests:/tests:ro" \
