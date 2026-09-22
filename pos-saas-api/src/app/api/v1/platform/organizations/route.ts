@@ -97,9 +97,7 @@ export async function POST(request: NextRequest) {
     if (organizationLookupError) throw organizationLookupError;
     if (existingOrganization) throw new ProvisioningError("Ya existe una organización con ese identificador", 409);
 
-    const webOrigin = (process.env.WEB_ORIGIN ?? process.env.NEXT_PUBLIC_SITE_URL ?? "")
-      .trim()
-      .replace(/\/+$/, "");
+    const webOrigin = (process.env.WEB_ORIGIN ?? process.env.NEXT_PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
     if (!webOrigin) throw new ProvisioningError("La URL pública de la web no está configurada", 503);
 
     const { data: authData, error: authError } = await db.auth.admin.inviteUserByEmail(body.adminEmail, {
