@@ -2,31 +2,29 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api/client";
 import { brand } from "@/config/brand";
+import { getBrowserAuthClient } from "@/lib/auth/browser";
 
-export default function LoginPage() {
-  const router = useRouter();
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setMessage(null);
     setLoading(true);
 
     try {
-      await apiFetch("/api/v1/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
-      router.replace("/dashboard");
-      router.refresh();
+      const supabase = getBrowserAuthClient();
+      const redirectTo = `${window.location.origin}/auth/update-password`;
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (resetError) throw resetError;
+      setMessage("Si el correo existe, recibirás un enlace para crear una contraseña nueva.");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo iniciar sesión");
+      setError(cause instanceof Error ? cause.message : "No se pudo enviar el enlace");
     } finally {
       setLoading(false);
     }
@@ -44,14 +42,14 @@ export default function LoginPage() {
             <div className="auth-brand-context">Panel operativo</div>
           </div>
         </div>
-        <h1>Iniciar sesión</h1>
-        <p className="lead auth-lead">Entra para revisar el turno, pedidos, caja y operación de tu restaurante.</p>
+        <h1>Recuperar acceso</h1>
+        <p className="lead auth-lead">Te enviaremos un enlace para crear una contraseña nueva.</p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          <label htmlFor="login-email">
+          <label htmlFor="recovery-email">
             Correo electrónico
             <input
-              id="login-email"
+              id="recovery-email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -59,28 +57,21 @@ export default function LoginPage() {
               required
             />
           </label>
-          <label htmlFor="login-password">
-            Contraseña
-            <input
-              id="login-password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-              minLength={8}
-              required
-            />
-          </label>
+          {message && (
+            <p className="muted-copy" role="status">
+              {message}
+            </p>
+          )}
           {error && (
             <p className="form-error" role="alert">
               {error}
             </p>
           )}
           <button className="button button-primary" type="submit" disabled={loading}>
-            {loading ? "Ingresando..." : "Ingresar"}
+            {loading ? "Enviando..." : "Enviar enlace"}
           </button>
-          <Link className="link-button" href="/login/forgot-password">
-            ¿Olvidaste tu contraseña?
+          <Link className="link-button" href="/login">
+            Volver a iniciar sesión
           </Link>
         </form>
       </section>
