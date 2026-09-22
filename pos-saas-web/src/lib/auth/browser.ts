@@ -18,7 +18,7 @@ export function getBrowserAuthClient() {
     auth: {
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      persistSession: false,
+      persistSession: true,
     },
   });
 

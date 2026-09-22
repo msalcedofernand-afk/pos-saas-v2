@@ -19,7 +19,8 @@ export default function ForgotPasswordPage() {
 
     try {
       const supabase = getBrowserAuthClient();
-      const redirectTo = `${window.location.origin}/auth/update-password`;
+      const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+      const redirectTo = `${configuredSiteUrl || window.location.origin}/auth/update-password`;
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
       if (resetError) throw resetError;
       setMessage("Si el correo existe, recibirás un enlace para crear una contraseña nueva.");

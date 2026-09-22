@@ -11,24 +11,54 @@ export default function UpdatePasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [ready, setReady] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const supabase = getBrowserAuthClient();
     let mounted = true;
+    let invalidLinkTimer: number | undefined;
 
-    const subscription = supabase.auth.onAuthStateChange((event, session) => {
-      if (mounted && (event === "PASSWORD_RECOVERY" || Boolean(session))) setReady(true);
-    });
+    try {
+      const supabase = getBrowserAuthClient();
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (mounted && data.session) setReady(true);
-    });
+      const subscription = supabase.auth.onAuthStateChange((event, session) => {
+        if (!mounted) return;
+        if (event === "PASSWORD_RECOVERY" || Boolean(session)) {
+          window.clearTimeout(invalidLinkTimer);
+          setReady(true);
+          setChecking(false);
+        }
+      });
+
+      void supabase.auth.getSession().then(({ data }) => {
+        if (!mounted) return;
+        if (data.session) {
+          setReady(true);
+          setChecking(false);
+          return;
+        }
+
+        invalidLinkTimer = window.setTimeout(() => {
+          if (mounted) setChecking(false);
+        }, 1000);
+      });
+
+      return () => {
+        mounted = false;
+        window.clearTimeout(invalidLinkTimer);
+        subscription.data.subscription.unsubscribe();
+      };
+    } catch (cause) {
+      if (mounted) {
+        setChecking(false);
+        setError(cause instanceof Error ? cause.message : "No se pudo validar el enlace");
+      }
+    }
 
     return () => {
       mounted = false;
-      subscription.data.subscription.unsubscribe();
+      window.clearTimeout(invalidLinkTimer);
     };
   }, []);
 
@@ -96,7 +126,12 @@ export default function UpdatePasswordPage() {
               required
             />
           </label>
-          {!ready && (
+          {checking && (
+            <p className="muted-copy" role="status">
+              Validando el enlace...
+            </p>
+          )}
+          {!checking && !ready && (
             <p className="form-error" role="alert">
               El enlace no es válido o ya expiró. Solicita otro enlace.
             </p>
