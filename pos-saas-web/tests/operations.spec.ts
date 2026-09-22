@@ -123,10 +123,10 @@ test.describe("operaciones autenticadas", () => {
 
   test("administración global de usuarios y membresías", async ({ request }) => {
     const targetUserId = process.env.E2E_PLATFORM_TARGET_USER_ID;
-    requireOrSkip(
-      Boolean(platformCredentials.email && platformCredentials.password && targetUserId),
-      "Configura E2E_PLATFORM_EMAIL, E2E_PLATFORM_PASSWORD y E2E_PLATFORM_TARGET_USER_ID",
-    );
+    if (!platformCredentials.email || !platformCredentials.password || !targetUserId) {
+      test.skip(true, "Configura E2E_PLATFORM_EMAIL, E2E_PLATFORM_PASSWORD y E2E_PLATFORM_TARGET_USER_ID");
+      return;
+    }
     const platform = await login(request, platformCredentials);
     requireOrSkip(platform.data.roles.includes("platform_admin"), "La cuenta E2E global debe tener platform_admin");
 

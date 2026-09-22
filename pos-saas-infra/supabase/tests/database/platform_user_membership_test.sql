@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(11);
+SELECT plan(10);
 
 INSERT INTO auth.users (id, email, encrypted_password, aud, role, email_confirmed_at)
 VALUES
